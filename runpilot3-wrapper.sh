@@ -7,17 +7,11 @@ VERSION=20140801
 VERSION=devel
 
 function err() {
-  echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $@" >&2
+  echo "$(date --utc +'%Y-%m-%d %H:%M:%S %Z') wrapper.sh $@" >&2
 }
 
 function log() {
-        MSG="$@"
-
-        T=`date -u +"%Y-%m-%d %H:%M:%S,%N"`
-        T=${T:0:23}
-        T=$T" (UTC) - wrapper: "
-
-        FORMATTEDMSG=$T"$MSG"
+  echo "$(date --utc +'%Y-%m-%d %H:%M:%S %Z') wrapper.sh $@"
 }
 
 function lfc_test() {
@@ -185,25 +179,33 @@ function set_limits() {
 }
 
 function monrunning() {
-    echo -n 'Monitor ping: '
-    curl -ksS --connect-timeout 10 --max-time 20 -d state=running ${APFMON}/jobs/${APFFID}:${APFCID}
-    if [ $? -eq 0 ]; then
-        echo
-    else
-        echo $?
-        echo ARGS: -d state=exiting ${APFMON}/jobs/${APFFID}:${APFCID}
-    fi
+  if [ -z ${APFMON:-} ]; then
+    err 'wrapper monitoring not configured'
+    return
+  fi
+
+  out=`curl -ksS --connect-timeout 10 --max-time 20 -d state=running ${APFMON}/jobs/${APFFID}:${APFCID}`
+  if [[ "$?" -eq 0 ]]; then
+    err $out
+  else
+    err "wrapper monitor warning"
+    err "ARGS: -d state=exiting -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}"
+  fi
 }
 
 function monexiting() {
-    echo -n 'Monitor ping: '
-    curl -ksS --connect-timeout 10 --max-time 20 -d state=exiting -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}
-    if [ $? -eq 0 ]; then
-        echo
-    else
-        echo $?
-        echo ARGS: -d state=exiting -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}
-    fi
+  if [ -z ${APFMON:-} ]; then
+    err 'wrapper monitoring not configured'
+    return
+  fi
+
+  out=`curl -ksS --connect-timeout 10 --max-time 20 -d state=exiting -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}`
+  if [[ "$?" -eq 0 ]]; then
+    err $out
+  else
+    err "wrapper monitor warning"
+    err "ARGS: -d state=exiting -d rc=$1 -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}"
+  fi
 }
 
 function monpost() {
@@ -222,200 +224,204 @@ function set_forced_env() {
     eval $(env | egrep "^APF_FORCE_" | perl -pe 's/^APF_FORCE_//;')
 }
 
-
-## main ##
-
-log "The is pilot wrapper version: $VERSION"
-log "Please send development requests to p.love@lancaster.ac.uk"
-
-# notify monitoring, job running
-monrunning
-
-log "hostname: " `hostname`
-log "pwd: " `pwd`
-log "whoami: " `whoami`
-log "id: " `id`
-if [[ -r /proc/version ]]; then
-  log "/proc/version: " `cat /proc/version`
-fi
-
-# Check what was delivered
-echo "Scanning landing zone..."
-echo -n "Current dir: "
-startdir=$(pwd)
-echo $startdir
-ls -l
-me=$0
-myargs=$@
-echo "Me and my args: $0 $myargs"
-echo
-
-# If we have TMPDIR defined, then move into this directory
-# If it's not defined, then stay where we are
-if [ -n "$TMPDIR" ]; then
-    cd $TMPDIR
-fi
-templ=$(pwd)/condorg_XXXXXXXX
-temp=$(mktemp -d $templ)
-if [ $? -ne 0 ]; then
-  echo Failed: mktemp $templ
-  echo Exiting...
-  exit
-fi
+function main() {
+  ## main
+  # http://google-styleguide.googlecode.com/svn/trunk/shell.xml
   
-echo Changing work directory to $temp
-cd $temp
+  log "This is pilot wrapper version: $VERSION"
+  log "Please send development requests to p.love@lancaster.ac.uk"
+  
+  # notify monitoring, job running
+  monrunning
+  
+  log "hostname:" `hostname`
+  log "pwd:" `pwd`
+  log "whoami:" `whoami`
+  log "id:" `id`
+  if [[ -r /proc/version ]]; then
+    log "/proc/version:" `cat /proc/version`
+  fi
+  
+  exit 1
+  
+  # Check what was delivered
+  echo "Scanning landing zone..."
+  echo -n "Current dir: "
+  startdir=$(pwd)
+  echo $startdir
+  ls -l
+  me=$0
+  myargs=$@
+  echo "Me and my args: $0 $myargs"
+  echo
+  
+  # If we have TMPDIR defined, then move into this directory
+  # If it's not defined, then stay where we are
+  if [ -n "$TMPDIR" ]; then
+      cd $TMPDIR
+  fi
+  templ=$(pwd)/condorg_XXXXXXXX
+  temp=$(mktemp -d $templ)
+  if [ $? -ne 0 ]; then
+    echo Failed: mktemp $templ
+    echo Exiting...
+    exit
+  fi
+    
+  echo Changing work directory to $temp
+  cd $temp
+  
+  # Try to get pilot code...
+  get_pilot
+  ls -l
+  if [ ! -f pilot.py ]; then
+      echo "FATAL: Problem with pilot delivery - failing after dumping environment"
+  fi
+  
+  # Set any limits we need to stop jobs going crazy
+  echo
+  echo "---- Setting crazy job protection limits ----"
+  set_limits
+  echo
+  
+  # Set any forced environment variables
+  echo
+  echo "---- Looking for forced environment variables ----"
+  set_forced_env
+  echo
+  
+  # Environment sanity check (useful for debugging)
+  echo "---- Host Environment ----"
+  uname -a
+  hostname
+  hostname -f
+  echo
+  
+  echo "---- JOB Environment ----"
+  env | sort
+  echo
+  
+  echo "---- Shell Process Limits ----"
+  ulimit -a
+  echo
+  
+  echo "---- Proxy Information ----"
+  voms-proxy-info -all
+  echo
+  
+  # Unset https proxy - this is known to be broken 
+  # and is usually unnecessary on the ports used by
+  # the panda servers
+  unset https_proxy HTTPS_PROXY
+  
+  # Set LFC api timeouts
+  export LFC_CONNTIMEOUT=60
+  export LFC_CONRETRY=2
+  export LFC_CONRETRYINT=60
+  
+  
+  # Find the best python to run with
+  echo "---- Searching for LFC compatible python ----"
+  find_lfc_compatible_python
+  echo "Using $pybin for python LFC compatibility"
+  echo
+  
+  # OSG or EGEE?
+  if [ -n "$VO_ATLAS_SW_DIR" ]; then
+      echo "Found EGEE flavour site with software directory $VO_ATLAS_SW_DIR"
+      ATLAS_AREA=$VO_ATLAS_SW_DIR
+  elif [ -n "$OSG_APP" ]; then
+      echo "Found OSG flavor site with software directory $OSG_APP/atlas_app/atlas_rel"
+      ATLAS_AREA=$OSG_APP/atlas_app/atlas_rel
+  else
+      echo "ERROR: Failed to find VO_ATLAS_SW_DIR or OSG_APP. This is a bad site."
+      ATLAS_AREA=/bad_site
+  fi
+  
+  # Trouble with tags file in VO dir?
+  echo "---- VO SW Area ----"
+  ls -l $ATLAS_AREA/
+  echo
+  if [ -e $ATLAS_AREA/tags ]; then
+    echo Tag file contents:
+    cat $ATLAS_AREA/tags
+  else
+    echo Error: Tags file does not exist: $ATLAS_AREA/tags
+  fi
+  echo
+  
+  
+  # Add DQ2 clients to the PYTHONPATH
+  echo "---- DDM setup ----"
+  if [ -n "$APF_PYTHON26" ] && [ -f /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh ]; then
+    echo "Sourcing /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh"
+    source /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh
+  elif [ -f $ATLAS_AREA/ddm/latest/setup.sh ]; then
+    echo "Sourcing $ATLAS_AREA/ddm/latest/setup.sh"
+    source $ATLAS_AREA/ddm/latest/setup.sh
+  else
+    echo "WARNING: No DDM setup found to source."
+  fi
+  echo "$ rucio ping"
+  echo `rucio ping`
+  echo
+  
+  # Search for local setup file
+  echo "---- Local ATLAS setup ----"
+  echo "Looking for $ATLAS_AREA/local/setup.sh"
+  if [ -f $ATLAS_AREA/local/setup.sh ]; then
+      echo "Sourcing $ATLAS_AREA/local/setup.sh"
+      source $ATLAS_AREA/local/setup.sh
+  else
+      echo "WARNING: No ATLAS local setup found to source."
+  fi
+  echo
+  
+  # This is where the pilot rundirectory is - maybe left after job finishes
+  scratch=`pwd`
+  
+  echo "---- Ready to run pilot ----"
+  echo "Arglist: $@"
+  echo "My Arguments: $myargs"
+  
+  
+  # If we know the pilot type then set this
+  if [ -n "$PILOT_TYPE" ]; then
+      pilot_args="-d $scratch $myargs -i $PILOT_TYPE"
+  else
+      pilot_args="-d $scratch $myargs"
+  fi
+  
+  # Prd server and pass arguments
+  cmd="$pybin pilot.py $pilot_args"
+  
+  echo cmd: $cmd
+  $cmd
+  pexitcode=$?
+  
+  echo
+  echo "Pilot exit status was $pexitcode"
+  
+  # notify monitoring, job exiting, capture the pilot exit status
+  if [ -f STATUSCODE ]; then
+  echo
+    scode=`cat STATUSCODE`
+  else
+    scode=$pexitcode
+  fi
+  echo -n STATUSCODE:
+  echo $scode
+  monexiting $scode
+  monpost
+  
+  
+  # Now wipe out our temp run directory, so as not to leave rubbish lying around
+  echo "Now clearing run directory of all files."
+  cd $startdir
+  rm -fr $temp
+  
+  # The end
+  exit
+}
 
-# Try to get pilot code...
-get_pilot
-ls -l
-if [ ! -f pilot.py ]; then
-    echo "FATAL: Problem with pilot delivery - failing after dumping environment"
-fi
-
-# Set any limits we need to stop jobs going crazy
-echo
-echo "---- Setting crazy job protection limits ----"
-set_limits
-echo
-
-# Set any forced environment variables
-echo
-echo "---- Looking for forced environment variables ----"
-set_forced_env
-echo
-
-# Environment sanity check (useful for debugging)
-echo "---- Host Environment ----"
-uname -a
-hostname
-hostname -f
-echo
-
-echo "---- JOB Environment ----"
-env | sort
-echo
-
-echo "---- Shell Process Limits ----"
-ulimit -a
-echo
-
-echo "---- Proxy Information ----"
-voms-proxy-info -all
-echo
-
-# Unset https proxy - this is known to be broken 
-# and is usually unnecessary on the ports used by
-# the panda servers
-unset https_proxy HTTPS_PROXY
-
-# Set LFC api timeouts
-export LFC_CONNTIMEOUT=60
-export LFC_CONRETRY=2
-export LFC_CONRETRYINT=60
-
-
-# Find the best python to run with
-echo "---- Searching for LFC compatible python ----"
-find_lfc_compatible_python
-echo "Using $pybin for python LFC compatibility"
-echo
-
-# OSG or EGEE?
-if [ -n "$VO_ATLAS_SW_DIR" ]; then
-    echo "Found EGEE flavour site with software directory $VO_ATLAS_SW_DIR"
-    ATLAS_AREA=$VO_ATLAS_SW_DIR
-elif [ -n "$OSG_APP" ]; then
-    echo "Found OSG flavor site with software directory $OSG_APP/atlas_app/atlas_rel"
-    ATLAS_AREA=$OSG_APP/atlas_app/atlas_rel
-else
-    echo "ERROR: Failed to find VO_ATLAS_SW_DIR or OSG_APP. This is a bad site."
-    ATLAS_AREA=/bad_site
-fi
-
-# Trouble with tags file in VO dir?
-echo "---- VO SW Area ----"
-ls -l $ATLAS_AREA/
-echo
-if [ -e $ATLAS_AREA/tags ]; then
-  echo Tag file contents:
-  cat $ATLAS_AREA/tags
-else
-  echo Error: Tags file does not exist: $ATLAS_AREA/tags
-fi
-echo
-
-
-# Add DQ2 clients to the PYTHONPATH
-echo "---- DDM setup ----"
-if [ -n "$APF_PYTHON26" ] && [ -f /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh ]; then
-  echo "Sourcing /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh"
-  source /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh
-elif [ -f $ATLAS_AREA/ddm/latest/setup.sh ]; then
-  echo "Sourcing $ATLAS_AREA/ddm/latest/setup.sh"
-  source $ATLAS_AREA/ddm/latest/setup.sh
-else
-  echo "WARNING: No DDM setup found to source."
-fi
-echo "$ rucio ping"
-echo `rucio ping`
-echo
-
-# Search for local setup file
-echo "---- Local ATLAS setup ----"
-echo "Looking for $ATLAS_AREA/local/setup.sh"
-if [ -f $ATLAS_AREA/local/setup.sh ]; then
-    echo "Sourcing $ATLAS_AREA/local/setup.sh"
-    source $ATLAS_AREA/local/setup.sh
-else
-    echo "WARNING: No ATLAS local setup found to source."
-fi
-echo
-
-# This is where the pilot rundirectory is - maybe left after job finishes
-scratch=`pwd`
-
-echo "---- Ready to run pilot ----"
-echo "Arglist: $@"
-echo "My Arguments: $myargs"
-
-
-# If we know the pilot type then set this
-if [ -n "$PILOT_TYPE" ]; then
-    pilot_args="-d $scratch $myargs -i $PILOT_TYPE"
-else
-    pilot_args="-d $scratch $myargs"
-fi
-
-# Prd server and pass arguments
-cmd="$pybin pilot.py $pilot_args"
-
-echo cmd: $cmd
-$cmd
-pexitcode=$?
-
-echo
-echo "Pilot exit status was $pexitcode"
-
-# notify monitoring, job exiting, capture the pilot exit status
-if [ -f STATUSCODE ]; then
-echo
-  scode=`cat STATUSCODE`
-else
-  scode=$pexitcode
-fi
-echo -n STATUSCODE:
-echo $scode
-monexiting $scode
-monpost
-
-
-# Now wipe out our temp run directory, so as not to leave rubbish lying around
-echo "Now clearing run directory of all files."
-cd $startdir
-rm -fr $temp
-
-# The end
-exit
-
-# http://google-styleguide.googlecode.com/svn/trunk/shell.xml
+main "$@"
