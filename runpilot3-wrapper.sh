@@ -242,8 +242,6 @@ function main() {
     log "/proc/version:" `cat /proc/version`
   fi
   
-  exit 1
-  
   # Check what was delivered
   echo "Scanning landing zone..."
   echo -n "Current dir: "
