@@ -225,27 +225,25 @@ function set_forced_env() {
 }
 
 function main() {
-  ## main
-  # http://google-styleguide.googlecode.com/svn/trunk/shell.xml
   
-  log "This is pilot wrapper version: $VERSION"
-  log "Please send development requests to p.love@lancaster.ac.uk"
+  echo "This is pilot wrapper version: $VERSION"
+  echo "Please send development requests to p.love@lancaster.ac.uk"
   
+  log "==== wrapper.sh output BEGIN ===="
   # notify monitoring, job running
   monrunning
   
-  log "hostname:" `hostname`
-  log "pwd:" `pwd`
-  log "whoami:" `whoami`
-  log "id:" `id`
+  log "---- Host environment ----"
+  echo "hostname:" `hostname`
+  echo "pwd:" `pwd`
+  echo "whoami:" `whoami`
+  echo "id:" `id`
   if [[ -r /proc/version ]]; then
-    log "/proc/version:" `cat /proc/version`
+    echo "/proc/version:" `cat /proc/version`
   fi
   
   # Check what was delivered
   echo "Scanning landing zone..."
-  echo -n "Current dir: "
-  startdir=$(pwd)
   echo $startdir
   ls -l
   me=$0
@@ -394,7 +392,10 @@ function main() {
   cmd="$pybin pilot.py $pilot_args"
   
   echo cmd: $cmd
+  log "==== pilot output BEGIN ===="
   $cmd
+  log "==== pilot output END ===="
+  log "==== wrapper.sh output RESUME ===="
   pexitcode=$?
   
   echo
@@ -419,6 +420,7 @@ function main() {
   rm -fr $temp
   
   # The end
+  log "==== wrapper.sh output END ===="
   exit
 }
 
