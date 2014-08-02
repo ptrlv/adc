@@ -208,14 +208,6 @@ function monexiting() {
   fi
 }
 
-function monpost() {
-    # scrape PandaIDs from pilot log
-    echo 'SCRAPE PandaIDs: '
-    find -name pilotlog.* -exec egrep ^PandaID= {} \; 
-
-    echo 'END SCRAPE'
-}
-
 function main() {
   #
   # Fail early with useful diagnostics
@@ -405,7 +397,6 @@ function main() {
   echo -n STATUSCODE:
   echo $scode
   monexiting $scode
-  monpost
   
   
   # Now wipe out our temp run directory, so as not to leave rubbish lying around
