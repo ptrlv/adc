@@ -184,7 +184,7 @@ function monrunning() {
     return
   fi
 
-  out=`curl -ksS --connect-timeout 10 --max-time 20 -d state=running ${APFMON}/jobs/${APFFID}:${APFCID}`
+  out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=running ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ "$?" -eq 0 ]]; then
     log $out
   else
@@ -199,7 +199,7 @@ function monexiting() {
     return
   fi
 
-  out=`curl -ksS --connect-timeout 10 --max-time 20 -d state=exiting -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}`
+  out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=exiting -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ "$?" -eq 0 ]]; then
     log $out
   else
@@ -238,12 +238,12 @@ function main() {
 
   echo
   echo "---- Host environment ----"
-  echo "hostname:" `hostname`
-  echo "pwd:" `pwd`
-  echo "whoami:" `whoami`
-  echo "id:" `id`
+  echo "hostname:" $(hostname)
+  echo "pwd:" $(pwd)
+  echo "whoami:" $(whoami)
+  echo "id:" $(id)
   if [[ -r /proc/version ]]; then
-    echo "/proc/version:" `cat /proc/version`
+    echo "/proc/version:" $(cat /proc/version)
   fi
   
   # Check what was delivered
@@ -365,7 +365,7 @@ function main() {
     echo "WARNING: No DDM setup found to source."
   fi
   echo "$ rucio ping"
-  echo `rucio ping`
+  echo $(rucio ping)
   echo
   
   # Search for local setup file
@@ -380,7 +380,7 @@ function main() {
   echo
   
   # This is where the pilot rundirectory is - maybe left after job finishes
-  scratch=`pwd`
+  scratch=$(pwd)
   
   echo "---- Ready to run pilot ----"
   echo "Arglist: $@"
@@ -412,7 +412,7 @@ function main() {
   # notify monitoring, job exiting, capture the pilot exit status
   if [ -f STATUSCODE ]; then
   echo
-    scode=`cat STATUSCODE`
+    scode=$(cat STATUSCODE)
   else
     scode=$pexitcode
   fi
