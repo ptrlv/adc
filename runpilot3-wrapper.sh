@@ -7,11 +7,11 @@ VERSION=20140801
 VERSION=devel-2155
 
 function err() {
-  date --utc +"%Y-%m-%d %H:%M:%S %Z wrapper $@" >&2
+  date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@" >&2
 }
 
 function log() {
-  date --utc +"%Y-%m-%d %H:%M:%S %Z wrapper $@"
+  date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@"
 }
 
 function lfc_test() {
