@@ -3,8 +3,8 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20140801
-VERSION=devel-2155
+VERSION=20140802
+#VERSION=devel-2155
 
 function err() {
   date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@" >&2
@@ -229,15 +229,9 @@ function main() {
   if [[ -r /proc/version ]]; then
     echo "/proc/version:" $(cat /proc/version)
   fi
-  
-  # Check what was delivered
-  echo "Scanning landing zone..."
   startdir=$(pwd)
-  echo $startdir
-  ls -l
-  me=$0
   myargs=$@
-  echo "Me and my args: $0 $myargs"
+  echo "cmd: $0 $myargs"
   echo
   
   # If we have TMPDIR defined, then move into this directory
