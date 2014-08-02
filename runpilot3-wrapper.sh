@@ -186,7 +186,7 @@ function monrunning() {
 
   out=`curl -ksS --connect-timeout 10 --max-time 20 -d state=running ${APFMON}/jobs/${APFFID}:${APFCID}`
   if [[ "$?" -eq 0 ]]; then
-    err $out
+    log $out
   else
     err "wrapper monitor warning"
     err "ARGS: -d state=exiting -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}"
@@ -201,7 +201,7 @@ function monexiting() {
 
   out=`curl -ksS --connect-timeout 10 --max-time 20 -d state=exiting -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}`
   if [[ "$?" -eq 0 ]]; then
-    err $out
+    log $out
   else
     err "wrapper monitor warning"
     err "ARGS: -d state=exiting -d rc=$1 -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}"
@@ -225,15 +225,19 @@ function set_forced_env() {
 }
 
 function main() {
+  #
+  # Fail early with useful diagnostics
+  #
   
   echo "This is pilot wrapper version: $VERSION"
   echo "Please send development requests to p.love@lancaster.ac.uk"
   
-  log "==== wrapper.sh output BEGIN ===="
+  log "==== wrapper output BEGIN ===="
   # notify monitoring, job running
   monrunning
-  
-  log "---- Host environment ----"
+
+  echo
+  echo "---- Host environment ----"
   echo "hostname:" `hostname`
   echo "pwd:" `pwd`
   echo "whoami:" `whoami`
@@ -244,6 +248,7 @@ function main() {
   
   # Check what was delivered
   echo "Scanning landing zone..."
+  startdir=$(pwd)
   echo $startdir
   ls -l
   me=$0
@@ -254,7 +259,8 @@ function main() {
   # If we have TMPDIR defined, then move into this directory
   # If it's not defined, then stay where we are
   if [ -n "$TMPDIR" ]; then
-      cd $TMPDIR
+    log "changing into TMPDIR: $TMDDIR"
+    cd $TMPDIR
   fi
   templ=$(pwd)/condorg_XXXXXXXX
   temp=$(mktemp -d $templ)
@@ -270,8 +276,8 @@ function main() {
   # Try to get pilot code...
   get_pilot
   ls -l
-  if [ ! -f pilot.py ]; then
-      echo "FATAL: Problem with pilot delivery - failing after dumping environment"
+  if [ ! -r pilot.py ]; then
+    echo "FATAL: Problem with pilot delivery - failing after dumping environment"
   fi
   
   # Set any limits we need to stop jobs going crazy
@@ -394,8 +400,10 @@ function main() {
   echo cmd: $cmd
   log "==== pilot output BEGIN ===="
   $cmd
+  pilotpid=$!
   log "==== pilot output END ===="
-  log "==== wrapper.sh output RESUME ===="
+  log "pilotpid=$pilotpid"
+  log "==== wrapper output RESUME ===="
   pexitcode=$?
   
   echo
@@ -420,7 +428,7 @@ function main() {
   rm -fr $temp
   
   # The end
-  log "==== wrapper.sh output END ===="
+  log "==== wrapper output END ===="
   exit
 }
 
