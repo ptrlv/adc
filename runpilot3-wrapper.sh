@@ -7,11 +7,11 @@ VERSION=20140801
 VERSION=devel
 
 function err() {
-  echo "$(date --utc +'%Y-%m-%d %H:%M:%S %Z') wrapper.sh $@" >&2
+  date --utc +"%Y-%m-%d %H:%M:%S %Z wrapper $@" >&2
 }
 
 function log() {
-  echo "$(date --utc +'%Y-%m-%d %H:%M:%S %Z') wrapper.sh $@"
+  date --utc +"%Y-%m-%d %H:%M:%S %Z wrapper $@"
 }
 
 function lfc_test() {
