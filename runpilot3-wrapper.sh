@@ -216,20 +216,12 @@ function monpost() {
     echo 'END SCRAPE'
 }
 
-function set_forced_env() {
-    # Sometimes environment settings via condor fail if they are overwritten
-    # by the site. Force env vars by prefixing them with APF_FORCE_
-    echo Forced environment variables are
-    env | grep APF_FORCE_
-    eval $(env | egrep "^APF_FORCE_" | perl -pe 's/^APF_FORCE_//;')
-}
-
 function main() {
   #
   # Fail early with useful diagnostics
   #
   
-  echo "This is pilot wrapper version: $VERSION"
+  echo "This is ATLAS pilot wrapper version: $VERSION"
   echo "Please send development requests to p.love@lancaster.ac.uk"
   
   log "==== wrapper output BEGIN ===="
@@ -284,12 +276,6 @@ function main() {
   echo
   echo "---- Setting crazy job protection limits ----"
   set_limits
-  echo
-  
-  # Set any forced environment variables
-  echo
-  echo "---- Looking for forced environment variables ----"
-  set_forced_env
   echo
   
   # Environment sanity check (useful for debugging)
