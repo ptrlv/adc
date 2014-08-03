@@ -151,7 +151,7 @@ function get_pilot() {
 
 function set_limits() {
     # Set some limits to catch jobs which go crazy from killing nodes
-    err "refactor: remove shell limits set_limits()"
+    err "refactor: calling set_limits()"
     
     # 20GB limit for output size (block = 1K in bash)
     fsizelimit=$((20*1024*1024))
@@ -390,6 +390,7 @@ function main() {
   log "==== pilot stdout BEGIN ===="
   $cmd
   pilotpid=$!
+  err "pilotpid: $pilotpid"
   wait $pilotpid
   pilotrc=$?
   err "refactor: wait $pilotpid $pilotrc $?"
@@ -400,7 +401,6 @@ function main() {
   
   # notify monitoring, job exiting, capture the pilot exit status
   if [ -f STATUSCODE ]; then
-  echo
     scode=$(cat STATUSCODE)
   else
     scode=$pilotrc
@@ -410,8 +410,7 @@ function main() {
   
   # Now wipe out our temp run directory, so as not to leave rubbish lying around
   cd $startdir
-  log "clearing run directory of all files"
-  log "rm -rf $temp"
+  log "cleanup: rm -rf $temp"
   rm -fr $temp
   
   log "==== wrapper stdout END ===="
