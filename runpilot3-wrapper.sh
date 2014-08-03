@@ -101,53 +101,42 @@ function find_lfc_compatible_python() {
 }
 
 function get_pilot() {
-    # Extract the pilot via http from CERN (N.B. uudecode now deprecated)
-    # You can get custom pilots by having PILOT_HTTP_SOURCES defined
-    # Pilot tarballs have no pilot3/ directory stub, so we conform to that...
-    mkdir pilot3
-    cd pilot3
+  # If you define the environment variable PILOT_HTTP_SOURCES then
+  # loop over those servers. Otherwise use CERN.
+  # N.B. an RC pilot is chosen once every 100 downloads for production and
+  # ptest jobs use Paul's development release.
 
-    get_pilot_http $myargs
-    if [ $? = "0" ]; then
-        return 0
+  mkdir pilot3
+  cd pilot3
+
+  if [ -z "$PILOT_HTTP_SOURCES" ]; then
+    if echo $myargs | grep -- "-u ptest" > /dev/null; then 
+      echo "This is a ptest pilot. Will use development pilot code with python2.6"
+      PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilotcode-dev.tar.gz"
+      PILOT_TYPE=PT
+      APF_PYTHON26=1
+    elif [ $(($RANDOM%100)) = "0" ]; then
+      echo "Release candidate pilot will be used with python2.6"
+      PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode-rc.tar.gz"
+      PILOT_TYPE=RC
+      APF_PYTHON26=1
+    else
+      echo "DEBUG: Normal production pilot code used." 
+      PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode.tar.gz"
+      PILOT_TYPE=PR
     fi
+  fi
 
-    echo "Could not get pilot code from any source. Self destruct in 5..4..3..2..1.."
-    return 1
-}
-
-function get_pilot_http() {
-    # If you define the environment variable PILOT_HTTP_SOURCES then
-    # loop over those servers. Otherwise use CERN, with Glasgow as a fallback.
-    # N.B. an RC pilot is chosen once every 100 downloads for production and
-    # ptest jobs use Paul's development release.
-    if [ -z "$PILOT_HTTP_SOURCES" ]; then
-        if echo $myargs | grep -- "-u ptest" > /dev/null; then 
-            echo "DEBUG: This is a ptest pilot. Will use development pilot code with python2.6"
-            PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilotcode-dev.tar.gz"
-            PILOT_TYPE=PT
-            APF_PYTHON26=1
-        elif [ $(($RANDOM%100)) = "0" ]; then
-            echo "DEBUG: Release candidate pilot will be used with python2.6"
-            PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode-rc.tar.gz"
-            PILOT_TYPE=RC
-            APF_PYTHON26=1
-        else
-            echo "DEBUG: Normal production pilot code used." 
-            PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode.tar.gz"
-            PILOT_TYPE=PR
-        fi
+  for url in $PILOT_HTTP_SOURCES; do
+    echo "Trying to download pilot from $url ..."
+    curl --connect-timeout 30 --max-time 180 -sS $url | tar -xzf -
+    if [ -f pilot.py ]; then
+      echo "Successfully downloaded pilot from $url"
+      return 0
     fi
-    for source in $PILOT_HTTP_SOURCES; do
-        echo "Trying to download pilot from $source..."
-        curl --connect-timeout 30 --max-time 180 -sS $source | tar -xzf -
-        if [ -f pilot.py ]; then
-            echo "Downloaded pilot from $source"
-            return 0
-        fi
-        echo "Download from $source failed."
-    done
-    return 1
+    echo "Download failed: $url"
+  done
+  return 1
 }
 
 function set_limits() {
@@ -184,7 +173,9 @@ function monrunning() {
     return
   fi
 
-  out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=running ${APFMON}/jobs/${APFFID}:${APFCID})
+  out=$(curl -ksS --connect-timeout 10 --max-time 20 \
+             -d state=running -d wrapper=$VERSION \
+             ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ "$?" -eq 0 ]]; then
     log $out
   else
@@ -215,6 +206,7 @@ function main() {
   
   echo "This is ATLAS pilot wrapper version: $VERSION"
   echo "Please send development requests to p.love@lancaster.ac.uk"
+  echo
   
   log "==== wrapper output BEGIN ===="
   # notify monitoring, job running
@@ -236,8 +228,10 @@ function main() {
   
   # If we have TMPDIR defined, then move into this directory
   # If it's not defined, then stay where we are
+  # to be refactored away, always use pwd
   if [ -n "$TMPDIR" ]; then
-    log "changing into TMPDIR: $TMDDIR"
+    log "changing into TMPDIR: $TMPDIR"
+    err "refactor: this site uses TMPDIR: $TMPDIR"
     cd $TMPDIR
   fi
   templ=$(pwd)/condorg_XXXXXXXX
@@ -253,9 +247,9 @@ function main() {
   
   # Try to get pilot code...
   get_pilot
-  ls -l
-  if [ ! -r pilot.py ]; then
-    echo "FATAL: Problem with pilot delivery - failing after dumping environment"
+  if [[ "$?" -ne 0 ]]; then
+    log "FATAL: failed to retrieve pilot code"
+    err "FATAL: failed to retrieve pilot code"
   fi
   
   # Set any limits we need to stop jobs going crazy
