@@ -385,10 +385,10 @@ function main() {
   fi
   
   trap handler SIGTERM
-  cmd="$pybin pilot.py $pilot_args &"
+  cmd="$pybin pilot.py $pilot_args"
   echo cmd: $cmd
   log "==== pilot stdout BEGIN ===="
-  $cmd
+  $cmd &
   pilotpid=$!
   err "pilotpid: $pilotpid"
   wait $pilotpid
