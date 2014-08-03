@@ -230,7 +230,6 @@ function main() {
   
   echo "This is ATLAS pilot wrapper version: $VERSION"
   echo "Please send development requests to p.love@lancaster.ac.uk"
-  echo
   
   log "==== wrapper output BEGIN ===="
   err "This wrapper is currently (August) being refactored, please report problems"
