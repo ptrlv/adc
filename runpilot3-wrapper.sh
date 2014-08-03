@@ -49,11 +49,15 @@ function find_lfc_compatible_python() {
       echo "Native python version is > 2.6.0"
       lfc_test $pybin
       if [ $? = "0" ]; then
+        log "refactor: this site has native python $pyver"
+        err "refactor: this site has native python $pyver"
         return 0
       else
         echo "Trying cvmfs version..."
       fi
     else
+      log "refactor: this site has native python < 2.6.0"
+      err "refactor: this site has native python < 2.6.0"
       echo "Native python $pybin is old: $pyver"
       echo "Trying cvmfs version..."
     fi
@@ -72,6 +76,8 @@ function find_lfc_compatible_python() {
         pybin=`which python`
         lfc_test $pybin
         if [ $? = "0" ]; then
+          log "refactor: this site using cvmfs python $pybin"
+          err "refactor: this site using cvmfs python $pybin"
           return 0
         fi
       else
@@ -84,6 +90,8 @@ function find_lfc_compatible_python() {
     pybin=python
     lfc_test $pybin
     if [ $? = "0" ]; then
+        log "refactor: this site using default python $pybin"
+        err "refactor: this site using default python $pybin"
         return 0
     fi
 
@@ -91,13 +99,15 @@ function find_lfc_compatible_python() {
     pybin=python32
     lfc_test $pybin
     if [ $? == "0" ]; then
+        log "refactor: this site using python32 $pybin"
+        err "refactor: this site using python32 $pybin"
         return 0
     fi
 
     # Oh dear, we're doomed...
-    echo "ERROR: Failed to find an LFC compatible python."
-    echo "Going in with pybin=python - this will probably fail..."
-    pybin=python
+    log "ERROR: Failed to find an LFC compatible python, exiting"
+    err "ERROR: Failed to find an LFC compatible python, exiting"
+    exit 1
 }
 
 function get_pilot() {
@@ -309,6 +319,7 @@ function main() {
   
   # OSG or EGEE?
   # refactor, remove or handle OSG
+  echo "---- VO software area ----"
   if [ -n "$VO_ATLAS_SW_DIR" ]; then
     echo "Found EGEE flavour site with software directory $VO_ATLAS_SW_DIR"
     ATLAS_AREA=$VO_ATLAS_SW_DIR
@@ -322,10 +333,10 @@ function main() {
     ATLAS_AREA=/bad_site
   fi
   
-  echo "---- VO SW Area ----"
   ls -l $ATLAS_AREA/
   echo
   if [ -e $ATLAS_AREA/tags ]; then
+    echo "sha256sum $ATLAS_AREA/tags"
     sha256sum $ATLAS_AREA/tags
   else
     err "ERROR: Tags file does not exist: $ATLAS_AREA/tags, exiting."
@@ -341,6 +352,7 @@ function main() {
     source /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh
   elif [ -f $ATLAS_AREA/ddm/latest/setup.sh ]; then
     echo "Sourcing $ATLAS_AREA/ddm/latest/setup.sh"
+    err "refactor: sourcing $ATLAS_AREA/ddm/latest/setup.sh"
     source $ATLAS_AREA/ddm/latest/setup.sh
   else
     log "WARNING: No DDM setup found to source, exiting."
