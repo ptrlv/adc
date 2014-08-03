@@ -151,7 +151,7 @@ function get_pilot() {
 
 function set_limits() {
     # Set some limits to catch jobs which go crazy from killing nodes
-    log "refactor: remove shell limits set_limits()"
+    err "refactor: remove shell limits set_limits()"
     
     # 20GB limit for output size (block = 1K in bash)
     fsizelimit=$((20*1024*1024))
@@ -205,7 +205,7 @@ function monexiting() {
   if [[ "$?" -eq 0 ]]; then
     log $out
   else
-    err "wrapper monitor warning"
+    err "warning: wrapper monitor"
     err "ARGS: -d state=exiting -d rc=$1 -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}"
   fi
 }
@@ -281,7 +281,7 @@ function main() {
   
   # Set any limits we need to stop jobs going crazy
   echo
-  echo "---- Setting crazy job protection limits ----"
+  echo "---- Setting shell limits ----"
   set_limits
   echo
   
@@ -289,7 +289,7 @@ function main() {
   printenv | sort
   echo
   
-  echo "---- Shell Process Limits ----"
+  echo "---- Shell process limits ----"
   ulimit -a
   echo
   
@@ -390,30 +390,30 @@ function main() {
   log "==== pilot stdout BEGIN ===="
   $cmd
   pilotpid=$!
-  pexitstatus=$?
   wait $pilotpid
+  pilotrc=$?
+  err "refactor: wait $pilotpid $pilotrc $?"
   log "==== pilot stdout END ===="
   log "==== wrapper stdout RESUME ===="
   log "pilotpid: $pilotpid"
-  log "Pilot exit status was $pexitstatus"
+  log "Pilot exit status was $pilotrc"
   
   # notify monitoring, job exiting, capture the pilot exit status
   if [ -f STATUSCODE ]; then
   echo
     scode=$(cat STATUSCODE)
   else
-    scode=$pexitstatus
+    scode=$pilotrc
   fi
-  echo -n STATUSCODE:
-  echo $scode
+  log "STATUSCODE: $scode"
   monexiting $scode
   
   # Now wipe out our temp run directory, so as not to leave rubbish lying around
-  echo "Now clearing run directory of all files."
   cd $startdir
+  log "clearing run directory of all files"
+  log "rm -rf $temp"
   rm -fr $temp
   
-  # The end
   log "==== wrapper stdout END ===="
   exit
 }
