@@ -111,17 +111,17 @@ function get_pilot() {
 
   if [ -z "$PILOT_HTTP_SOURCES" ]; then
     if echo $myargs | grep -- "-u ptest" > /dev/null; then 
-      echo "This is a ptest pilot. Will use development pilot code with python2.6"
+      log "This is a ptest pilot. Development pilot will be used"
       PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilotcode-dev.tar.gz"
       PILOT_TYPE=PT
       APF_PYTHON26=1
     elif [ $(($RANDOM%100)) = "0" ]; then
-      echo "Release candidate pilot will be used with python2.6"
+      log "Release candidate pilot will be used"
       PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode-rc.tar.gz"
       PILOT_TYPE=RC
       APF_PYTHON26=1
     else
-      echo "DEBUG: Normal production pilot code used." 
+      log "Normal production pilot will be used" 
       PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode.tar.gz"
       PILOT_TYPE=PR
     fi
@@ -141,6 +141,7 @@ function get_pilot() {
 
 function set_limits() {
     # Set some limits to catch jobs which go crazy from killing nodes
+    log "refactor: remove shell limits set_limits()"
     
     # 20GB limit for output size (block = 1K in bash)
     fsizelimit=$((20*1024*1024))
@@ -199,22 +200,36 @@ function monexiting() {
   fi
 }
 
+function handler() {
+  log "Caught SIGTERM, sending to pilot pid=$pilotpid"
+  err "Caught SIGTERM, sending to pilot pid=$pilotpid"
+  kill -15 $pilotpid
+  wait
+}
+
 function main() {
   #
   # Fail early with useful diagnostics
   #
+  # CHANGELOG:
+  # refactor and code cleanup
+  # added datetime to stdout/err
+  # ignore TMPDIR, just run in landing directory
+  # removed shell limits, now done in pilot
+  # 
   
   echo "This is ATLAS pilot wrapper version: $VERSION"
   echo "Please send development requests to p.love@lancaster.ac.uk"
   echo
   
   log "==== wrapper output BEGIN ===="
+  err "This wrapper is currently (August) being refactored, please report problems"
   # notify monitoring, job running
   monrunning
 
-  echo
   echo "---- Host environment ----"
   echo "hostname:" $(hostname)
+  echo "hostname -f:" $(hostname -f)
   echo "pwd:" $(pwd)
   echo "whoami:" $(whoami)
   echo "id:" $(id)
@@ -230,16 +245,18 @@ function main() {
   # If it's not defined, then stay where we are
   # to be refactored away, always use pwd
   if [ -n "$TMPDIR" ]; then
-    log "changing into TMPDIR: $TMPDIR"
     err "refactor: this site uses TMPDIR: $TMPDIR"
+    log "cd \$TMPDIR: $TMPDIR"
     cd $TMPDIR
   fi
   templ=$(pwd)/condorg_XXXXXXXX
   temp=$(mktemp -d $templ)
   if [ $? -ne 0 ]; then
-    echo Failed: mktemp $templ
-    echo Exiting...
-    exit
+    err "Failed: mktemp $templ"
+    log "Failed: mktemp $templ"
+    err "Exiting."
+    log "Exiting."
+    exit 1
   fi
     
   echo Changing work directory to $temp
@@ -250,6 +267,7 @@ function main() {
   if [[ "$?" -ne 0 ]]; then
     log "FATAL: failed to retrieve pilot code"
     err "FATAL: failed to retrieve pilot code"
+    exit 1
   fi
   
   # Set any limits we need to stop jobs going crazy
@@ -258,15 +276,8 @@ function main() {
   set_limits
   echo
   
-  # Environment sanity check (useful for debugging)
-  echo "---- Host Environment ----"
-  uname -a
-  hostname
-  hostname -f
-  echo
-  
   echo "---- JOB Environment ----"
-  env | sort
+  printenv | sort
   echo
   
   echo "---- Shell Process Limits ----"
@@ -277,17 +288,19 @@ function main() {
   voms-proxy-info -all
   echo
   
+  # refactor
   # Unset https proxy - this is known to be broken 
   # and is usually unnecessary on the ports used by
   # the panda servers
   unset https_proxy HTTPS_PROXY
   
+  # refactor
   # Set LFC api timeouts
   export LFC_CONNTIMEOUT=60
   export LFC_CONRETRY=2
   export LFC_CONRETRYINT=60
   
-  
+  # refactor
   # Find the best python to run with
   echo "---- Searching for LFC compatible python ----"
   find_lfc_compatible_python
@@ -295,31 +308,33 @@ function main() {
   echo
   
   # OSG or EGEE?
+  # refactor, remove or handle OSG
   if [ -n "$VO_ATLAS_SW_DIR" ]; then
-      echo "Found EGEE flavour site with software directory $VO_ATLAS_SW_DIR"
-      ATLAS_AREA=$VO_ATLAS_SW_DIR
+    echo "Found EGEE flavour site with software directory $VO_ATLAS_SW_DIR"
+    ATLAS_AREA=$VO_ATLAS_SW_DIR
   elif [ -n "$OSG_APP" ]; then
-      echo "Found OSG flavor site with software directory $OSG_APP/atlas_app/atlas_rel"
-      ATLAS_AREA=$OSG_APP/atlas_app/atlas_rel
+    echo "Found OSG flavor site with software directory $OSG_APP/atlas_app/atlas_rel"
+    ATLAS_AREA=$OSG_APP/atlas_app/atlas_rel
   else
-      echo "ERROR: Failed to find VO_ATLAS_SW_DIR or OSG_APP. This is a bad site."
-      ATLAS_AREA=/bad_site
+    log "ERROR: Failed to find VO_ATLAS_SW_DIR or OSG_APP. This is a bad site, exiting."
+    err "ERROR: Failed to find VO_ATLAS_SW_DIR or OSG_APP. This is a bad site, exiting."
+    exit 1
+    ATLAS_AREA=/bad_site
   fi
   
-  # Trouble with tags file in VO dir?
   echo "---- VO SW Area ----"
   ls -l $ATLAS_AREA/
   echo
   if [ -e $ATLAS_AREA/tags ]; then
-    echo Tag file contents:
-    cat $ATLAS_AREA/tags
+    sha256sum $ATLAS_AREA/tags
   else
-    echo Error: Tags file does not exist: $ATLAS_AREA/tags
+    err "ERROR: Tags file does not exist: $ATLAS_AREA/tags, exiting."
+    log "ERROR: Tags file does not exist: $ATLAS_AREA/tags, exiting."
+    exit 1
   fi
   echo
   
-  
-  # Add DQ2 clients to the PYTHONPATH
+  # setup DDM client
   echo "---- DDM setup ----"
   if [ -n "$APF_PYTHON26" ] && [ -f /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh ]; then
     echo "Sourcing /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh"
@@ -328,20 +343,22 @@ function main() {
     echo "Sourcing $ATLAS_AREA/ddm/latest/setup.sh"
     source $ATLAS_AREA/ddm/latest/setup.sh
   else
-    echo "WARNING: No DDM setup found to source."
+    log "WARNING: No DDM setup found to source, exiting."
+    err "WARNING: No DDM setup found to source, exiting."
+    exit 1
   fi
   echo "$ rucio ping"
   echo $(rucio ping)
   echo
   
-  # Search for local setup file
   echo "---- Local ATLAS setup ----"
   echo "Looking for $ATLAS_AREA/local/setup.sh"
   if [ -f $ATLAS_AREA/local/setup.sh ]; then
       echo "Sourcing $ATLAS_AREA/local/setup.sh"
       source $ATLAS_AREA/local/setup.sh
   else
-      echo "WARNING: No ATLAS local setup found to source."
+      log "WARNING: No ATLAS local setup found"
+      err "refactor: this site has no local setup $ATLAS_AREA/local/setup.sh"
   fi
   echo
   
@@ -349,10 +366,6 @@ function main() {
   scratch=$(pwd)
   
   echo "---- Ready to run pilot ----"
-  echo "Arglist: $@"
-  echo "My Arguments: $myargs"
-  
-  
   # If we know the pilot type then set this
   if [ -n "$PILOT_TYPE" ]; then
       pilot_args="-d $scratch $myargs -i $PILOT_TYPE"
@@ -360,32 +373,32 @@ function main() {
       pilot_args="-d $scratch $myargs"
   fi
   
-  # Prd server and pass arguments
+  trap handler SIGTERM
+#  refactor: b/g to handle signals
+#  cmd="$pybin pilot.py $pilot_args &"
   cmd="$pybin pilot.py $pilot_args"
-  
   echo cmd: $cmd
   log "==== pilot output BEGIN ===="
   $cmd
   pilotpid=$!
+  pexitstatus=$?
+#  wait $pilotpid
   log "==== pilot output END ===="
   log "pilotpid=$pilotpid"
   log "==== wrapper output RESUME ===="
-  pexitcode=$?
   
-  echo
-  echo "Pilot exit status was $pexitcode"
+  log "Pilot exit status was $pexitstatus"
   
   # notify monitoring, job exiting, capture the pilot exit status
   if [ -f STATUSCODE ]; then
   echo
     scode=$(cat STATUSCODE)
   else
-    scode=$pexitcode
+    scode=$pexitstatus
   fi
   echo -n STATUSCODE:
   echo $scode
   monexiting $scode
-  
   
   # Now wipe out our temp run directory, so as not to leave rubbish lying around
   echo "Now clearing run directory of all files."
