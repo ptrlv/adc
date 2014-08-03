@@ -211,8 +211,8 @@ function monexiting() {
 }
 
 function handler() {
-  log "Caught SIGTERM, sending to pilot pid=$pilotpid"
-  err "Caught SIGTERM, sending to pilot pid=$pilotpid"
+  log "Caught SIGTERM, sending to pilot PID:$pilotpid"
+  err "Caught SIGTERM, sending to pilot PID:$pilotpid"
   kill -15 $pilotpid
   wait
 }
@@ -390,14 +390,14 @@ function main() {
 #  cmd="$pybin pilot.py $pilot_args &"
   cmd="$pybin pilot.py $pilot_args"
   echo cmd: $cmd
-  log "==== pilot output BEGIN ===="
+  log "==== pilot stdout BEGIN ===="
   $cmd
   pilotpid=$!
   pexitstatus=$?
 #  wait $pilotpid
-  log "==== pilot output END ===="
-  log "pilotpid=$pilotpid"
-  log "==== wrapper output RESUME ===="
+  log "==== pilot stdout END ===="
+  log "pilotpid:$pilotpid"
+  log "==== wrapper stdout RESUME ===="
   
   log "Pilot exit status was $pexitstatus"
   
@@ -418,7 +418,7 @@ function main() {
   rm -fr $temp
   
   # The end
-  log "==== wrapper output END ===="
+  log "==== wrapper stdout END ===="
   exit
 }
 
