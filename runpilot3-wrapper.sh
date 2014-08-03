@@ -339,8 +339,8 @@ function main() {
     echo "sha256sum $ATLAS_AREA/tags"
     sha256sum $ATLAS_AREA/tags
   else
-    err "ERROR: Tags file does not exist: $ATLAS_AREA/tags, exiting."
-    log "ERROR: Tags file does not exist: $ATLAS_AREA/tags, exiting."
+    err "ERROR: tags file does not exist: $ATLAS_AREA/tags, exiting."
+    log "ERROR: tags file does not exist: $ATLAS_AREA/tags, exiting."
     exit 1
   fi
   echo
@@ -386,19 +386,16 @@ function main() {
   fi
   
   trap handler SIGTERM
-#  refactor: b/g to handle signals
-#  cmd="$pybin pilot.py $pilot_args &"
-  cmd="$pybin pilot.py $pilot_args"
+  cmd="$pybin pilot.py $pilot_args &"
   echo cmd: $cmd
   log "==== pilot stdout BEGIN ===="
   $cmd
   pilotpid=$!
   pexitstatus=$?
-#  wait $pilotpid
+  wait $pilotpid
   log "==== pilot stdout END ===="
-  log "pilotpid:$pilotpid"
   log "==== wrapper stdout RESUME ===="
-  
+  log "pilotpid: $pilotpid"
   log "Pilot exit status was $pexitstatus"
   
   # notify monitoring, job exiting, capture the pilot exit status
