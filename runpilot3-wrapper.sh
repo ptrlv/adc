@@ -138,13 +138,13 @@ function get_pilot() {
   fi
 
   for url in $PILOT_HTTP_SOURCES; do
-    echo "Trying to download pilot from $url ..."
     curl --connect-timeout 30 --max-time 180 -sS $url | tar -xzf -
     if [ -f pilot.py ]; then
-      echo "Successfully downloaded pilot from $url"
+      log "Pilot download OK: $url"
       return 0
     fi
-    echo "Download failed: $url"
+    log "ERROR: pilot download failed: $url"
+    err "ERROR: pilot download failed: $url"
   done
   return 1
 }
