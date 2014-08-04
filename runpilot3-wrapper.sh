@@ -149,35 +149,6 @@ function get_pilot() {
   return 1
 }
 
-function set_limits() {
-    # Set some limits to catch jobs which go crazy from killing nodes
-    err "refactor: calling set_limits()"
-    
-    # 20GB limit for output size (block = 1K in bash)
-    fsizelimit=$((20*1024*1024))
-    echo Setting filesize limit to $fsizelimit
-    ulimit -f $fsizelimit
-    
-    # Apply memory limit?
-    memLimit=0
-    while [ $# -gt 0 ]; do
-        if [ $1 == "-k" ]; then
-            memLimit=$2
-            shift $#
-        else
-            shift
-        fi
-    done
-    if [ $memLimit == "0" ]; then
-        echo No VMEM limit set
-    else
-        # Convert to kB
-        memLimit=$(($memLimit*1000))
-        echo Setting VMEM limit to ${memLimit}kB
-        ulimit -v $memLimit
-    fi
-}
-
 function monrunning() {
   if [ -z ${APFMON:-} ]; then
     err 'wrapper monitoring not configured'
@@ -225,7 +196,7 @@ function main() {
   # refactor and code cleanup
   # added datetime to stdout/err
   # ignore TMPDIR, just run in landing directory
-  # removed shell limits, now done in pilot
+  # removed function set_limits, now done in pilot
   # 
   
   echo "This is ATLAS pilot wrapper version: $VERSION"
@@ -278,12 +249,6 @@ function main() {
     err "FATAL: failed to retrieve pilot code"
     exit 1
   fi
-  
-  # Set any limits we need to stop jobs going crazy
-  echo
-  echo "---- Setting shell limits ----"
-  set_limits
-  echo
   
   echo "---- JOB Environment ----"
   printenv | sort
