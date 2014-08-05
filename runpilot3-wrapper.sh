@@ -361,7 +361,7 @@ function main() {
   err "refactor: wait $pilotpid $pilotrc $?"
   log "==== pilot stdout END ===="
   log "==== wrapper stdout RESUME ===="
-  log "Pilot exit status was $pilotrc"
+  log "Pilot exit status: $pilotrc"
   
   # notify monitoring, job exiting, capture the pilot exit status
   if [ -f STATUSCODE ]; then
