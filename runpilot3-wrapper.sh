@@ -226,6 +226,7 @@ function main() {
   # to be refactored away, always use pwd
   if [ -n "$TMPDIR" ]; then
     err "refactor: this site uses TMPDIR: $TMPDIR"
+    err "refactor: this site startdir: $startdir"
     log "cd \$TMPDIR: $TMPDIR"
     cd $TMPDIR
   fi
@@ -239,7 +240,7 @@ function main() {
     exit 1
   fi
     
-  echo Changing work directory to $temp
+  log "cd $temp"
   cd $temp
   
   # Try to get pilot code...
