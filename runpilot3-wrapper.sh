@@ -3,8 +3,8 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20140802
-VERSION=devel-2010
+VERSION=20140805
+#VERSION=devel-2010
 
 function err() {
   date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@" >&2
