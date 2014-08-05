@@ -355,13 +355,11 @@ function main() {
   log "==== pilot stdout BEGIN ===="
   $cmd &
   pilotpid=$!
-  err "pilotpid: $pilotpid"
   wait $pilotpid
   pilotrc=$?
   err "refactor: wait $pilotpid $pilotrc $?"
   log "==== pilot stdout END ===="
   log "==== wrapper stdout RESUME ===="
-  log "pilotpid: $pilotpid"
   log "Pilot exit status was $pilotrc"
   
   # notify monitoring, job exiting, capture the pilot exit status
