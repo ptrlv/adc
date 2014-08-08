@@ -203,7 +203,6 @@ function main() {
   echo "Please send development requests to p.love@lancaster.ac.uk"
   
   log "==== wrapper output BEGIN ===="
-  err "This wrapper is currently (August) being refactored, please report problems"
   # notify monitoring, job running
   monrunning
 
@@ -358,7 +357,6 @@ function main() {
   pilotpid=$!
   wait $pilotpid
   pilotrc=$?
-  err "refactor: wait $pilotpid $pilotrc $?"
   log "==== pilot stdout END ===="
   log "==== wrapper stdout RESUME ===="
   log "Pilot exit status: $pilotrc"
