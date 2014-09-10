@@ -44,7 +44,7 @@ status = online
 override = True
 enabled = True
 
-cleanlogs.keepdays = 7
+cleanlogs.keepdays = 21
 
 # plugins
 batchstatusplugin = Condor
