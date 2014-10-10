@@ -132,7 +132,7 @@ function get_pilot() {
       APF_PYTHON26=1
     else
       log "Normal production pilot will be used" 
-      PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode.tar.gz"
+      PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode-PICARD.tar.gz"
       PILOT_TYPE=PR
     fi
   fi
