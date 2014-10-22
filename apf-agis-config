@@ -33,7 +33,7 @@ try:
 except ImportError, err:
     import simplejson as json
 
-VERSION=20140910
+VERSION=20141022
 
 defaultsection = """\
 
