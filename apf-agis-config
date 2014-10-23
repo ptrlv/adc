@@ -79,7 +79,7 @@ specified cloud and activity type.
 ''')
     parser.add_option("-c",
                        dest="cloud",
-                       raction="store",
+                       action="store",
                        default='ALL',
                        type="string",
                        help="name of cloud")
