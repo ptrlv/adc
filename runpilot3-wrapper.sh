@@ -218,6 +218,7 @@ function main() {
   startdir=$(pwd)
   myargs=$@
   echo "cmd: $0 $myargs"
+  log "wrapper getopts: -h $hflag -p $pflag -s $sflag -u $uflag -w $wflag"
   echo
   
   # If we have TMPDIR defined, then move into this directory
@@ -330,8 +331,8 @@ function main() {
   echo "---- Local ATLAS setup ----"
   echo "Looking for $ATLAS_AREA/local/setup.sh"
   if [ -f $ATLAS_AREA/local/setup.sh ]; then
-      echo "Sourcing $ATLAS_AREA/local/setup.sh"
-      source $ATLAS_AREA/local/setup.sh
+      echo "Sourcing $ATLAS_AREA/local/setup.sh -s $sflag"
+      source $ATLAS_AREA/local/setup.sh -s $sflag
   else
       log "WARNING: No ATLAS local setup found"
       err "refactor: this site has no local setup $ATLAS_AREA/local/setup.sh"
@@ -378,5 +379,21 @@ function main() {
   log "==== wrapper stdout END ===="
   exit
 }
+
+hflag=''
+pflag=''
+sflag=''
+uflag=''
+wflag=''
+while getopts 'h:p:s:u:w:' flag; do
+  case "${flag}" in
+    h) hflag="${OPTARG}" ;;
+    p) pflag="${OPTARG}" ;;
+    s) sflag="${OPTARG}" ;;
+    u) uflag="${OPTARG}" ;;
+    w) wflag="${OPTARG}" ;;
+    *) err "Unexpected option ${flag}" ;;
+  esac
+done
 
 main "$@"
