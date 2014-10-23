@@ -3,7 +3,7 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20141010
+VERSION=20141023
 #VERSION=devel-2010
 
 function err() {
