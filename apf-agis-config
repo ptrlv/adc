@@ -79,7 +79,7 @@ specified cloud and activity type.
 ''')
     parser.add_option("-c",
                        dest="cloud",
-                       action="store",
+                       raction="store",
                        default='ALL',
                        type="string",
                        help="name of cloud")
@@ -151,7 +151,6 @@ specified cloud and activity type.
             if d[key]['site_state'] == 'ACTIVE' and d[key]['type'] == options.activity:
 
                 wmsqueue = d[key]['panda_resource']
-                pandaresource = d[key]['panda_resource']
                 cetype = d[key]['type']
                 memory = d[key]['memory']
                 maxtime = d[key]['maxtime']
@@ -200,7 +199,7 @@ specified cloud and activity type.
                         gridresource = '%s/ce-cream/services/CREAM2 %s %s' %(q['ce_endpoint'], q['ce_jobmanager'], q['ce_queue_name'])
                         submitplugin = 'CondorCREAM'
                         submitpluginstring = 'condorcream'
-                        creamenv = 'RUCIO_ACCOUNT=pilot PANDA_RESOURCE=%s' % pandaresource
+                        creamenv = 'RUCIO_ACCOUNT=pilot'
 
                         # https://wiki.italiangrid.it/twiki/bin/view/CREAM/UserGuideEMI2#Forward_of_requirements_to_the_b
                         if corecount:
@@ -282,7 +281,6 @@ specified cloud and activity type.
                         print 'nordugridrsl.nordugridrsladd = %s' % rsladd
                         print 'nordugridrsl.queue = %s' % q['ce_queue_name']
                         print 'nordugridrsl.addenv.RUCIO_ACCOUNT = pilot'
-                        print 'nordugridrsl.addenv.PANDA_RESOURCE = %s' % pandaresource
                         print 'batchsubmit.condornordugrid.condor_attributes = %(req)s,%(hold)s,%(remove)s,notification=Never'
                     if gramqueue:
                         print 'globusrsl.%s.queue = %s' % (gramversion, gramqueue)
