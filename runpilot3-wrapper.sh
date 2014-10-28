@@ -3,8 +3,7 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20141023
-#VERSION=devel-2010
+VERSION=20141028
 
 function err() {
   date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@" >&2
@@ -62,27 +61,26 @@ function find_lfc_compatible_python() {
       echo "Trying cvmfs version..."
     fi
     
-    # firstly try the cvmfs python2.6 binary
-    if [ -n "$APF_PYTHON26" ]; then
-      PYTHON26=/cvmfs/atlas.cern.ch/repo/sw/python/latest/setup.sh
-      if [ -f $PYTHON26 ] ; then
-        if [ ! -z $PYTHONPATH ]; then
-          echo "Clobbering PYTHONPATH. Needed to deal with tarball sites when using python2.6"
-          unset PYTHONPATH
-        fi
-        echo "sourcing cvmfs python2.6 setup: $PYTHON26"
-        source $PYTHON26
-        echo current PYTHONPATH=$PYTHONPATH
-        pybin=`which python`
-        lfc_test $pybin
-        if [ $? = "0" ]; then
-          log "refactor: this site using cvmfs python $pybin"
-          err "refactor: this site using cvmfs python $pybin"
-          return 0
-        fi
-      else
-        echo "cvmfs python2.6 not found"
+    # try the cvmfs python2.6 binary
+    PYTHON26=/cvmfs/atlas.cern.ch/repo/sw/python/latest/setup.sh
+    if [ -f $PYTHON26 ] ; then
+      if [ ! -z $PYTHONPATH ]; then
+        echo "Clobbering PYTHONPATH. Needed to deal with tarball sites when using python2.6"
+        unset PYTHONPATH
       fi
+      echo "sourcing cvmfs python2.6 setup: $PYTHON26"
+      source $PYTHON26
+      echo current PYTHONPATH=$PYTHONPATH
+      pybin=`which python`
+      lfc_test $pybin
+      if [ $? = "0" ]; then
+        log "refactor: this site using cvmfs python $pybin"
+        err "refactor: this site using cvmfs python $pybin"
+        return 0
+      fi
+    else
+      echo "cvmfs python2.6 not found"
+      err "not found: $PYTHON26"
     fi
 
     # On many sites python now works just fine (m/w also now
@@ -124,12 +122,10 @@ function get_pilot() {
       log "This is a ptest pilot. Development pilot will be used"
       PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilotcode-dev.tar.gz"
       PILOT_TYPE=PT
-      APF_PYTHON26=1
     elif [ $(($RANDOM%100)) = "0" ]; then
       log "Release candidate pilot will be used"
       PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode-rc.tar.gz"
       PILOT_TYPE=RC
-      APF_PYTHON26=1
     else
       log "Normal production pilot will be used" 
       PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode-PICARD.tar.gz"
@@ -312,7 +308,7 @@ function main() {
   
   # setup DDM client
   echo "---- DDM setup ----"
-  if [ -n "$APF_PYTHON26" ] && [ -f /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh ]; then
+  if [ -f /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh ]; then
     echo "Sourcing /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh"
     source /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh
   elif [ -f $ATLAS_AREA/ddm/latest/setup.sh ]; then
