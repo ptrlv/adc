@@ -88,8 +88,8 @@ specified cloud and activity type.
                        default="analysis",
                        action="store",
                        type="choice",
-                       choices=['analysis','production'],
-                       help="activity filter ('analysis' [default] or 'production')")
+                       choices=['analysis','production', 'ptest'],
+                       help="activity filter ('analysis' [default] or 'production' or 'ptest')")
     parser.add_option("-q", "--quiet",
                        dest="loglevel",
                        default=logging.WARNING,
@@ -135,7 +135,10 @@ specified cloud and activity type.
     # loop through PandaQueues
     for key in sorted(d):
         try:
-                
+            if d[key]['ptest']:
+                cetype = 'ptest'
+            else:
+                cetype = d[key]['type']
             if d[key]['pilot_manager'] != 'APF':
                 print
                 print "# Excluded: %s/%s (pilot_manager = %s)" % (d[key]['site'], key, d[key]['pilot_manager'])
@@ -148,10 +151,9 @@ specified cloud and activity type.
                 print
                 print "# NOT ATLAS: %s" % key
                 continue
-            if d[key]['site_state'] == 'ACTIVE' and d[key]['type'] == options.activity:
+            if d[key]['site_state'] == 'ACTIVE' and cetype == options.activity:
 
                 wmsqueue = d[key]['panda_resource']
-                cetype = d[key]['type']
                 memory = d[key]['memory']
                 maxtime = d[key]['maxtime']
                 maxmemory = d[key]['maxmemory']
@@ -260,7 +262,10 @@ specified cloud and activity type.
                         continue
             
                     print
-                    print '[%s-%s]' % (d[key]['nickname'], q['ce_queue_id'])
+                    if cetype == 'ptest':
+                        print '[%s-%s-ptest]' % (d[key]['nickname'], q['ce_queue_id'])
+                    else:
+                        print '[%s-%s]' % (d[key]['nickname'], q['ce_queue_id'])
                     print 'enabled = True'
                     print 'batchqueue = %s' % key
                     print 'wmsqueue = %s' % wmsqueue
@@ -290,9 +295,9 @@ specified cloud and activity type.
                     elif cetype == 'production':
                         print 'batchsubmit.%s.proxy = atlas-production' % submitpluginstring
                         print 'executable.arguments = %(executable.defaultarguments)s'
-                    if d[key]['ptest']:
-                        print '# ptest true'
-
+                    elif cetype == 'ptest':
+                        print 'batchsubmit.%s.proxy = atlas-production' % submitpluginstring
+                        print 'executable.arguments = %(executable.defaultarguments)s -u ptest'
 
         except KeyError, e:
           print '# Key error: %s' % e
