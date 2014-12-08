@@ -3,7 +3,7 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20141028
+VERSION=20141208
 
 function err() {
   date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@" >&2
@@ -320,8 +320,6 @@ function main() {
     err "WARNING: No DDM setup found to source, exiting."
     exit 1
   fi
-  echo "$ rucio ping"
-  echo $(rucio ping)
   echo
   
   echo "---- Local ATLAS setup ----"
