@@ -141,6 +141,10 @@ specified cloud and activity type.
             maxmemory = d[key]['maxmemory']
             minmemory = d[key]['minmemory']
             corecount = d[key]['corecount']
+            minrss = d[key].get('minrss', 0)
+            maxrss = d[key].get('maxrss', 0)
+            maxswap = d[key].get('maxswap', 0)
+
             
             for q in d[key]['queues']:
                 if q['ce_state'] != 'ACTIVE':
@@ -186,15 +190,29 @@ specified cloud and activity type.
                     creamenv = 'RUCIO_ACCOUNT=pilot'
 
                     # https://wiki.italiangrid.it/twiki/bin/view/CREAM/UserGuideEMI2#Forward_of_requirements_to_the_b
-                    if corecount:
-                        creamattr = 'CpuNumber=%d;WholeNodes=false;SMPGranularity=%d;' % (corecount, corecount)
-                    if maxmemory and maxtime:
-                        creamattr += 'CERequirements = "other.GlueHostMainMemoryRAMSize > %d ' % maxmemory
-                        creamattr += '&& other.GlueHostPolicyMaxWallClockTime >= %d";' % maxtime
-                    elif maxmemory:
-                        creamattr += 'CERequirements = "other.GlueHostMainMemoryRAMSize > %d";' % maxmemory
-                    elif maxtime:
-                        creamattr += 'CERequirements = "other.GlueHostPolicyMaxWallClockTime >= %d";' % maxtime
+                    if maxrss and maxswap and maxtime:
+                        if corecount:
+                            creamattr = 'CpuNumber=%d;WholeNodes=false;SMPGranularity=%d;' % (corecount, corecount)
+                        maxvirtual = maxrss + maxswap
+                        if corecount:
+                            cputime = corecount * maxtime
+                        else:
+                            cputime = maxtime
+                        creamattr += 'CERequirements = "other.GlueCEPolicyMaxCPUTime == %d ' % cputime
+                        creamattr += '&& other.GlueCEPolicyMaxWallClockTime == %d ' % maxtime
+                        creamattr += '&& other.GlueHostMainMemoryRAMSize == %d ' % maxrss
+                        creamattr += '&& other.GlueHostMainMemoryVirtualSize == %d";' % maxvirtual
+                    else:
+                        if corecount:
+                            creamattr = 'CpuNumber=%d;WholeNodes=false;SMPGranularity=%d;' % (corecount, corecount)
+                        if maxmemory and maxtime:
+                            creamattr += 'CERequirements = "other.GlueHostMainMemoryRAMSize > %d ' % maxmemory
+                            creamattr += '&& other.GlueHostPolicyMaxWallClockTime >= %d";' % maxtime
+                        elif maxmemory:
+                            creamattr += 'CERequirements = "other.GlueHostMainMemoryRAMSize > %d";' % maxmemory
+                        elif maxtime:
+                            creamattr += 'CERequirements = "other.GlueHostPolicyMaxWallClockTime >= %d";' % maxtime
+
 
                 elif q['ce_flavour'] == 'LCG-CE':
                     print
@@ -217,7 +235,10 @@ specified cloud and activity type.
                     if corecount:
                         rsladd += '(count = %d)' % corecount
                         rsladd += '(countpernode = %d)' % corecount
-                    if maxmemory and corecount:
+                    if maxrss and corecount:
+                        percore = maxrss/corecount
+                        rsladd += '(memory = %d)' % percore
+                    elif maxmemory and corecount:
                         percore = maxmemory/corecount
                         rsladd += '(memory = %d)' % percore
                     elif memory:
@@ -240,7 +261,7 @@ specified cloud and activity type.
                 print 'enabled = True'
                 print 'batchqueue = %s' % key
                 print 'wmsqueue = %s' % wmsqueue
-                print 'memory = %s' % memory
+#                print 'memory = %s' % memory
                 print 'batchsubmitplugin = %s' % submitplugin
                 print 'batchsubmit.%s.gridresource = %s' % (submitpluginstring, gridresource)
                 print 'sched.maxtorun.maximum = %d' % 9999
