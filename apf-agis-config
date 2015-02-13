@@ -265,6 +265,9 @@ specified cloud and activity type.
                 print 'batchsubmit.%s.gridresource = %s' % (submitpluginstring, gridresource)
                 print 'sched.maxtorun.maximum = %d' % 9999
                 print 'sched.maxpercycle.maximum = 5'
+                if d[key]['site'] in ['IN2P3-CC', 'IN2P3-CC-T2']:
+                    print 'schedplugin = Ready, Scale, StatusTest, MaxToRun, MinPerCycle, MaxPerCycle, MaxPending, StatusOffline'
+                    print 'sched.scale.factor = 0.50'
                 if creamenv:
                     print 'batchsubmit.condorcream.environ = %s' % creamenv
                     if creamattr:
@@ -282,7 +285,10 @@ specified cloud and activity type.
                     print 'globusrsl.%s.queue = %s' % (gramversion, gramqueue)
                 if options.activity == 'analysis':
                     print 'batchsubmit.%s.proxy = atlas-analysis' % submitpluginstring
-                    print 'executable.arguments = %(executable.defaultarguments)s -u user'
+                    if d[key]['cloud'] == 'FR':
+                        print 'executable.arguments = %(executable.defaultarguments)s -u user -A true'
+                    else:
+                        print 'executable.arguments = %(executable.defaultarguments)s -u user'
                 elif options.activity == 'production':
                     print 'batchsubmit.%s.proxy = atlas-production' % submitpluginstring
                     print 'executable.arguments = %(executable.defaultarguments)s'
