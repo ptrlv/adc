@@ -141,7 +141,6 @@ specified cloud and activity type.
             maxmemory = d[key]['maxmemory']
             minmemory = d[key]['minmemory']
             corecount = d[key]['corecount']
-            minrss = d[key].get('minrss', 0)
             maxrss = d[key].get('maxrss', 0)
             maxswap = d[key].get('maxswap', 0)
 
