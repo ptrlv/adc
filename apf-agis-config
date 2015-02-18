@@ -10,7 +10,7 @@ from urllib import urlopen
 import sys
 import json
 
-VERSION=20141126
+VERSION=20150218
 
 defaultsection = """\
 
@@ -285,7 +285,7 @@ specified cloud and activity type.
                     print 'globusrsl.%s.queue = %s' % (gramversion, gramqueue)
                 if options.activity == 'analysis':
                     print 'batchsubmit.%s.proxy = atlas-analysis' % submitpluginstring
-                    if d[key]['cloud'] == 'FR':
+                    if d[key]['country'] == 'France':
                         print 'executable.arguments = %(executable.defaultarguments)s -u user -A true'
                     else:
                         print 'executable.arguments = %(executable.defaultarguments)s -u user'
