@@ -10,7 +10,7 @@ from urllib import urlopen
 import sys
 import json
 
-VERSION=20150218
+VERSION=20150309
 
 defaultsection = """\
 
@@ -35,7 +35,7 @@ sched.statustest.pilots = 1
 sched.statusoffline.allowed = True
 sched.statusoffline.pilots = 0
 sched.minpercycle.minimum = 0
-sched.maxpending.maximum = 5
+sched.maxpending.maximum = 10
 
 executable = /etc/apf/runpilot3-wrapper.sh
 executable.defaultarguments = -s %(wmsqueue)s -h %(batchqueue)s -p 25443 -w https://pandaserver.cern.ch
