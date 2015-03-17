@@ -138,15 +138,11 @@ specified cloud and activity type.
             wmsqueue = d[key]['panda_resource']
             memory = d[key]['memory']
             maxtime = d[key]['maxtime']
-            print '# agis maxtime',maxtime
             maxmemory = d[key]['maxmemory']
-            print '# agis maxmemory',maxmemory
             minmemory = d[key]['minmemory']
             corecount = d[key]['corecount']
             maxrss = d[key].get('maxrss', 0)
-            print '# agis maxrss',maxrss
             maxswap = d[key].get('maxswap', 0)
-            print '# agis maxswap',maxswap
 
             
             for q in d[key]['queues']:
