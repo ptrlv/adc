@@ -188,6 +188,8 @@ specified cloud and activity type.
                     submitpluginstring = 'condorcream'
                     creamenv = 'RUCIO_ACCOUNT=pilot'
 
+                    # glue 1.3 uses minutes and this / operator uses floor value
+                    maxtime = maxtime / 60
                     # https://wiki.italiangrid.it/twiki/bin/view/CREAM/UserGuideEMI2#Forward_of_requirements_to_the_b
                     if maxrss and maxswap and maxtime:
                         if corecount:
