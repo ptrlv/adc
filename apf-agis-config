@@ -138,11 +138,15 @@ specified cloud and activity type.
             wmsqueue = d[key]['panda_resource']
             memory = d[key]['memory']
             maxtime = d[key]['maxtime']
+            print '# agis maxtime',maxtime
             maxmemory = d[key]['maxmemory']
+            print '# agis maxmemory',maxmemory
             minmemory = d[key]['minmemory']
             corecount = d[key]['corecount']
             maxrss = d[key].get('maxrss', 0)
+            print '# agis maxrss',maxrss
             maxswap = d[key].get('maxswap', 0)
+            print '# agis maxswap',maxswap
 
             
             for q in d[key]['queues']:
@@ -189,30 +193,30 @@ specified cloud and activity type.
                     creamenv = 'RUCIO_ACCOUNT=pilot'
 
                     # glue 1.3 uses minutes and this / operator uses floor value
-                    maxtime = maxtime / 60
+                    creammaxtime = maxtime / 60
                     # https://wiki.italiangrid.it/twiki/bin/view/CREAM/UserGuideEMI2#Forward_of_requirements_to_the_b
-                    if maxrss and maxswap and maxtime:
+                    if maxrss and maxswap and creammaxtime:
                         if corecount:
                             creamattr = 'CpuNumber=%d;WholeNodes=false;SMPGranularity=%d;' % (corecount, corecount)
                         maxvirtual = maxrss + maxswap
                         if corecount:
-                            cputime = corecount * maxtime
+                            cputime = corecount * creammaxtime
                         else:
-                            cputime = maxtime
+                            cputime = creammaxtime
                         creamattr += 'CERequirements = "other.GlueCEPolicyMaxCPUTime == %d ' % cputime
-                        creamattr += '&& other.GlueCEPolicyMaxWallClockTime == %d ' % maxtime
+                        creamattr += '&& other.GlueCEPolicyMaxWallClockTime == %d ' % creammaxtime
                         creamattr += '&& other.GlueHostMainMemoryRAMSize == %d ' % maxrss
                         creamattr += '&& other.GlueHostMainMemoryVirtualSize == %d";' % maxvirtual
                     else:
                         if corecount:
                             creamattr = 'CpuNumber=%d;WholeNodes=false;SMPGranularity=%d;' % (corecount, corecount)
-                        if maxmemory and maxtime:
+                        if maxmemory and creammaxtime:
                             creamattr += 'CERequirements = "other.GlueHostMainMemoryRAMSize > %d ' % maxmemory
-                            creamattr += '&& other.GlueHostPolicyMaxWallClockTime >= %d";' % maxtime
+                            creamattr += '&& other.GlueHostPolicyMaxWallClockTime >= %d";' % creammaxtime
                         elif maxmemory:
                             creamattr += 'CERequirements = "other.GlueHostMainMemoryRAMSize > %d";' % maxmemory
-                        elif maxtime:
-                            creamattr += 'CERequirements = "other.GlueHostPolicyMaxWallClockTime >= %d";' % maxtime
+                        elif creammaxtime:
+                            creamattr += 'CERequirements = "other.GlueHostPolicyMaxWallClockTime >= %d";' % creammaxtime
 
 
                 elif q['ce_flavour'] == 'LCG-CE':
