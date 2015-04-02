@@ -3,7 +3,7 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20141208
+VERSION=20150331
 
 function err() {
   date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@" >&2
@@ -177,10 +177,45 @@ function monexiting() {
   fi
 }
 
-function handler() {
+function term_handler() {
   log "Caught SIGTERM, sending to pilot PID:$pilotpid"
   err "Caught SIGTERM, sending to pilot PID:$pilotpid"
-  kill -15 $pilotpid
+  kill -s SIGTERM $pilotpid
+  wait
+}
+
+function quit_handler() {
+  log "Caught SIGQUIT, sending to pilot PID:$pilotpid"
+  err "Caught SIGQUIT, sending to pilot PID:$pilotpid"
+  kill -s SIGQUIT $pilotpid
+  wait
+}
+
+function segv_handler() {
+  log "Caught SIGSEGV, sending to pilot PID:$pilotpid"
+  err "Caught SIGSEGV, sending to pilot PID:$pilotpid"
+  kill -s SIGSEGV $pilotpid
+  wait
+}
+
+function xcpu_handler() {
+  log "Caught SIGXCPU, sending to pilot PID:$pilotpid"
+  err "Caught SIGXCPU, sending to pilot PID:$pilotpid"
+  kill -s SIGXCPU $pilotpid
+  wait
+}
+
+function usr1_handler() {
+  log "Caught SIGUSR1, sending to pilot PID:$pilotpid"
+  err "Caught SIGUSR1, sending to pilot PID:$pilotpid"
+  kill -s SIGUSR1 $pilotpid
+  wait
+}
+
+function bus_handler() {
+  log "Caught SIGBUS, sending to pilot PID:$pilotpid"
+  err "Caught SIGBUS, sending to pilot PID:$pilotpid"
+  kill -s SIGBUS $pilotpid
   wait
 }
 
@@ -344,7 +379,12 @@ function main() {
       pilot_args="-d $scratch $myargs"
   fi
   
-  trap handler SIGTERM
+  trap term_handler SIGTERM
+  trap quit_handler SIGQUIT
+  trap segv_handler SIGSEGV
+  trap xcpu_handler SIGXCPU
+  trap usr1_handler SIGUSR1
+  trap bus_handler SIGBUS
   cmd="$pybin pilot.py $pilot_args"
   echo cmd: $cmd
   log "==== pilot stdout BEGIN ===="
