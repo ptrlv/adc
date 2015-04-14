@@ -3,7 +3,7 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20150331
+VERSION=20150414
 
 function err() {
   date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@" >&2
@@ -365,6 +365,23 @@ function main() {
   else
       log "WARNING: No ATLAS local setup found"
       err "refactor: this site has no local setup $ATLAS_AREA/local/setup.sh"
+  fi
+  echo
+
+  echo "---- Prepare DDM ToACache ----"
+  echo "Looking for $ATLAS_AREA/local/etc/ToACache.py"
+  TOACACHE="$ATLAS_AREA/local/etc/ToACache.py"
+  TOALCACHE="/var/tmp/.dq2$(whoami)/ToACache.py"
+  if [ -s "$TOACACHE" ] ; then
+    if [ -L "$TOALCACHE" ] ; then
+      log "Link to $TOALCACHE already in place, touching it to extend the vaildity"
+      touch -h $TOALCACHE
+    else
+      log "Linking $TOACACHE to $TOALCACHE"
+      rm -f $TOALCACHE && ln -s $TOACACHE $TOALCACHE
+    fi
+  else
+    log "Local $TOACACHE not found (or zero size), continuing"
   fi
   echo
   
