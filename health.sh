@@ -22,9 +22,7 @@ function age() {
 
 tmpfile=$(mktemp)
 logfile=/var/log/apf/apf.log
-logfile=$0
 shortname=$(hostname -s)
-shortname=aipanda009
 timestamp=$(date +%Y-%m-%dT%H:%M:%S)
 logage=$(age "$logfile")
 
