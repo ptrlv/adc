@@ -391,9 +391,9 @@ function main() {
   echo "---- Ready to run pilot ----"
   # If we know the pilot type then set this
   if [ -n "$PILOT_TYPE" ]; then
-      pilot_args="-d $scratch $myargs -i $PILOT_TYPE"
+      pilot_args="-d $scratch $myargs -i $PILOT_TYPE -G 1"
   else
-      pilot_args="-d $scratch $myargs"
+      pilot_args="-d $scratch $myargs -G 1"
   fi
   
   trap term_handler SIGTERM
