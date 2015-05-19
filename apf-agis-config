@@ -139,11 +139,8 @@ specified cloud and activity type.
             memory = d[key]['memory']
             maxtime = d[key]['maxtime']
             maxmemory = d[key]['maxmemory']
-            minmemory = d[key]['minmemory']
             corecount = d[key]['corecount']
             maxrss = d[key].get('maxrss', 0)
-            maxswap = d[key].get('maxswap', 0)
-
             
             for q in d[key]['queues']:
                 if q['ce_state'] != 'ACTIVE':
@@ -191,10 +188,9 @@ specified cloud and activity type.
                     # glue 1.3 uses minutes and this / operator uses floor value
                     creammaxtime = maxtime / 60
                     # https://wiki.italiangrid.it/twiki/bin/view/CREAM/UserGuideEMI2#Forward_of_requirements_to_the_b
-                    if maxrss and maxswap and creammaxtime:
+                    if maxrss and maxmemory and creammaxtime:
                         if corecount:
                             creamattr = 'CpuNumber=%d;WholeNodes=false;SMPGranularity=%d;' % (corecount, corecount)
-                        maxvirtual = maxrss + maxswap
                         if corecount:
                             cputime = corecount * creammaxtime
                         else:
@@ -202,17 +198,17 @@ specified cloud and activity type.
                         creamattr += 'CERequirements = "other.GlueCEPolicyMaxCPUTime == %d ' % cputime
                         creamattr += '&& other.GlueCEPolicyMaxWallClockTime == %d ' % creammaxtime
                         creamattr += '&& other.GlueHostMainMemoryRAMSize == %d ' % maxrss
-                        creamattr += '&& other.GlueHostMainMemoryVirtualSize == %d";' % maxvirtual
+                        creamattr += '&& other.GlueHostMainMemoryVirtualSize == %d";' % maxmemory
                     else:
                         if corecount:
                             creamattr = 'CpuNumber=%d;WholeNodes=false;SMPGranularity=%d;' % (corecount, corecount)
                         if maxmemory and creammaxtime:
-                            creamattr += 'CERequirements = "other.GlueHostMainMemoryRAMSize > %d ' % maxmemory
-                            creamattr += '&& other.GlueHostPolicyMaxWallClockTime >= %d";' % creammaxtime
+                            creamattr += 'CERequirements = "other.GlueHostMainMemoryRAMSize == %d ' % maxmemory
+                            creamattr += '&& other.GlueHostPolicyMaxWallClockTime == %d";' % creammaxtime
                         elif maxmemory:
-                            creamattr += 'CERequirements = "other.GlueHostMainMemoryRAMSize > %d";' % maxmemory
+                            creamattr += 'CERequirements = "other.GlueHostMainMemoryRAMSize == %d";' % maxmemory
                         elif creammaxtime:
-                            creamattr += 'CERequirements = "other.GlueHostPolicyMaxWallClockTime >= %d";' % creammaxtime
+                            creamattr += 'CERequirements = "other.GlueHostPolicyMaxWallClockTime == %d";' % creammaxtime
 
 
                 elif q['ce_flavour'] == 'LCG-CE':
