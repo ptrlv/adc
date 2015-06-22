@@ -141,6 +141,7 @@ specified cloud and activity type.
             maxmemory = d[key]['maxmemory']
             corecount = d[key]['corecount']
             maxrss = d[key].get('maxrss', 0)
+            pilot_version = d[key].get('pilot_version', 'current')
             
             for q in d[key]['queues']:
                 if q['ce_state'] != 'ACTIVE':
@@ -183,7 +184,10 @@ specified cloud and activity type.
                     gridresource = '%s/ce-cream/services/CREAM2 %s %s' %(q['ce_endpoint'], q['ce_jobmanager'], q['ce_queue_name'])
                     submitplugin = 'CondorCREAM'
                     submitpluginstring = 'condorcream'
-                    creamenv = 'RUCIO_ACCOUNT=pilot'
+                    if pilot_version not in ['current']:
+                        creamenv = 'RUCIO_ACCOUNT=pilot PILOT_HTTP_SOURCES=%s' % pilot_version
+                    else:
+                        creamenv = 'RUCIO_ACCOUNT=pilot'
 
                     # glue 1.3 uses minutes and this / operator uses floor value
                     creammaxtime = maxtime / 60
@@ -215,11 +219,6 @@ specified cloud and activity type.
                     print
                     print "# Skipping GT2 queue: %s (%s)" % (key, q['ce_queue_id'])
                     continue
-                    gridresource = '%s/jobmanager-%s' %(q['ce_endpoint'], q['ce_jobmanager'])
-                    submitplugin = 'CondorGT2'
-                    submitpluginstring = 'condorgt2'
-                    gramversion = 'gram2'
-                    gramqueue = q['ce_queue_name']
                     
                 elif q['ce_flavour'] == 'ARC-CE':
                     # ignore :port part
@@ -275,10 +274,12 @@ specified cloud and activity type.
                         print 'batchsubmit.condorcream.condor_attributes = %(req)s,%(hold)s,%(remove)s,notification=Never'
                 if nordugridrsl:
                     print 'batchsubmit.condornordugrid.nordugridrsl = %s' % nordugridrsl
+                    print 'batchsubmit.condornordugrid.condor_attributes = %(req)s,%(hold)s,%(remove)s,notification=Never'
                     print 'nordugridrsl.nordugridrsladd = %s' % rsladd
                     print 'nordugridrsl.queue = %s' % q['ce_queue_name']
                     print 'nordugridrsl.addenv.RUCIO_ACCOUNT = pilot'
-                    print 'batchsubmit.condornordugrid.condor_attributes = %(req)s,%(hold)s,%(remove)s,notification=Never'
+                    if pilot_version not in ['current']:
+                        print 'nordugridrsl.addenv.PILOT_HTTP_SOURCES = %s' % pilot_version
                 if gramqueue:
                     print 'globusrsl.%s.queue = %s' % (gramversion, gramqueue)
                 if options.activity == 'analysis':
