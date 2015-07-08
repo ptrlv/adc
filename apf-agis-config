@@ -265,7 +265,7 @@ specified cloud and activity type.
                 print 'sched.maxpercycle.maximum = 5'
                 if d[key]['site'] in ['IN2P3-CC', 'IN2P3-CC-T2']:
                     print 'schedplugin = Ready, Scale, StatusTest, MaxToRun, MinPerCycle, MaxPerCycle, MaxPending, StatusOffline'
-                    print 'sched.scale.factor = 0.15'
+                    print 'sched.scale.factor = 0.04'
                 if creamenv:
                     print 'batchsubmit.condorcream.environ = %s' % creamenv
                     if creamattr:
