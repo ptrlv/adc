@@ -31,7 +31,7 @@ monitorsection = apfmon-lancaster
 
 schedplugin = Ready, Scale, MaxPerCycle, MinPerCycle, StatusTest, StatusOffline, MaxPending
 sched.maxpending.maximum = 10
-sched.maxpercycle.maximum = 10
+sched.maxpercycle.maximum = 5
 sched.minpercycle.minimum = 0
 sched.scale.factor = 0.10
 sched.statusoffline.allowed = True
@@ -264,7 +264,6 @@ specified cloud and activity type.
                 print 'batchsubmitplugin = %s' % submitplugin
                 print 'batchsubmit.%s.gridresource = %s' % (submitpluginstring, gridresource)
                 print 'sched.maxtorun.maximum = %d' % 9999
-                print 'sched.maxpercycle.maximum = 5'
                 if d[key]['site'] in ['IN2P3-CC', 'IN2P3-CC-T2']:
                     print 'schedplugin = Ready, Scale, MaxPerCycle, MinPerCycle, StatusTest, StatusOffline, MaxPending'
                     print 'sched.scale.factor = 0.04'
