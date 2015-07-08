@@ -29,13 +29,15 @@ wmsstatusplugin = Panda
 schedplugin = Ready
 monitorsection = apfmon-lancaster
 
-schedplugin = Ready, StatusTest, MaxToRun, MinPerCycle, MaxPerCycle, MaxPending, StatusOffline
-sched.statustest.allowed = True
-sched.statustest.pilots = 1
+schedplugin = Ready, Scale, MaxPerCycle, MinPerCycle, StatusTest, StatusOffline, MaxPending
+sched.maxpending.maximum = 10
+sched.maxpercycle.maximum = 10
+sched.minpercycle.minimum = 0
+sched.scale.factor = 0.10
 sched.statusoffline.allowed = True
 sched.statusoffline.pilots = 0
-sched.minpercycle.minimum = 0
-sched.maxpending.maximum = 10
+sched.statustest.allowed = True
+sched.statustest.pilots = 1
 
 executable = /etc/apf/runpilot3-wrapper.sh
 executable.defaultarguments = -s %(wmsqueue)s -h %(batchqueue)s -p 25443 -w https://pandaserver.cern.ch
