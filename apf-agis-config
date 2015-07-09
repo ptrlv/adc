@@ -29,13 +29,15 @@ wmsstatusplugin = Panda
 schedplugin = Ready
 monitorsection = apfmon-lancaster
 
-schedplugin = Ready, StatusTest, MaxToRun, MinPerCycle, MaxPerCycle, MaxPending, StatusOffline
-sched.statustest.allowed = True
-sched.statustest.pilots = 1
+schedplugin = Ready, Scale, MaxPerCycle, MinPerCycle, StatusTest, StatusOffline, MaxPending
+sched.maxpending.maximum = 10
+sched.maxpercycle.maximum = 5
+sched.minpercycle.minimum = 0
+sched.scale.factor = 0.10
 sched.statusoffline.allowed = True
 sched.statusoffline.pilots = 0
-sched.minpercycle.minimum = 0
-sched.maxpending.maximum = 10
+sched.statustest.allowed = True
+sched.statustest.pilots = 1
 
 executable = /etc/apf/runpilot3-wrapper.sh
 executable.defaultarguments = -s %(wmsqueue)s -h %(batchqueue)s -p 25443 -w https://pandaserver.cern.ch
@@ -264,10 +266,9 @@ specified cloud and activity type.
                 print 'batchsubmitplugin = %s' % submitplugin
                 print 'batchsubmit.%s.gridresource = %s' % (submitpluginstring, gridresource)
                 print 'sched.maxtorun.maximum = %d' % 9999
-                print 'sched.maxpercycle.maximum = 5'
                 if d[key]['site'] in ['IN2P3-CC', 'IN2P3-CC-T2']:
-                    print 'schedplugin = Ready, Scale, StatusTest, MaxToRun, MinPerCycle, MaxPerCycle, MaxPending, StatusOffline'
-                    print 'sched.scale.factor = 0.15'
+                    print 'schedplugin = Ready, Scale, MaxPerCycle, MinPerCycle, StatusTest, StatusOffline, MaxPending'
+                    print 'sched.scale.factor = 0.04'
                 if creamenv:
                     print 'batchsubmit.condorcream.environ = %s' % creamenv
                     if creamattr:
