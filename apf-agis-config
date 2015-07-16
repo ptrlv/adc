@@ -210,7 +210,7 @@ specified cloud and activity type.
                             maxvirtual = maxrss + maxswap
                             creamattr += ' && other.GlueHostMainMemoryVirtualSize == %d";' % maxvirtual
                         else:
-                            creamattr += ';'
+                            creamattr += '";'
                     else:
                         if corecount:
                             creamattr = 'CpuNumber=%d;WholeNodes=false;SMPGranularity=%d;' % (corecount, corecount)
