@@ -205,10 +205,10 @@ specified cloud and activity type.
                         
                         creamattr += 'CERequirements = "other.GlueCEPolicyMaxCPUTime == %d ' % cputime
                         creamattr += '&& other.GlueCEPolicyMaxWallClockTime == %d ' % creammaxtime
-                        creamattr += '&& other.GlueHostMainMemoryRAMSize == %d ' % maxrss
+                        creamattr += '&& other.GlueHostMainMemoryRAMSize == %d' % maxrss
                         if maxswap:
                             maxvirtual = maxrss + maxswap
-                            creamattr += '&& other.GlueHostMainMemoryVirtualSize == %d";' % maxvirtual
+                            creamattr += ' && other.GlueHostMainMemoryVirtualSize == %d";' % maxvirtual
                         else:
                             creamattr += ';'
                     else:
