@@ -3,7 +3,7 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20150501
+VERSION=20150717
 
 function err() {
   date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@" >&2
@@ -443,6 +443,7 @@ while getopts 'h:p:s:u:w:' flag; do
     s) sflag="${OPTARG}" ;;
     u) uflag="${OPTARG}" ;;
     w) wflag="${OPTARG}" ;;
+    A) aflag="${OPTARG}" ;;
     *) err "Unexpected option ${flag}" ;;
   esac
 done
