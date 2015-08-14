@@ -1,0 +1,10 @@
+MAILTO=peter.love@cern.ch
+# refresh config from AGIS and restart factory during work hours
+#0 * * * * root /usr/local/bin/all-agis.sh &> /var/log/apf/all-agis.log
+#30 * * * * root /sbin/service factory restart >/dev/null
+# apfmon move between states quicker
+*/5 * * * * root /usr/local/bin/transition.sh /var/lib/condor/spool/history > /var/log/apf/trans.log
+# some graphite plotting
+*/5 * * * * root /usr/local/bin/stats.sh >/dev/null 2>&1
+# generate and push XML to SLSmon service
+*/2 * * * * root /usr/local/bin/health.sh >/dev/null
