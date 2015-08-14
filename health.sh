@@ -26,20 +26,20 @@ shortname=$(hostname -s)
 timestamp=$(date +%Y-%m-%dT%H:%M:%S)
 logage=$(age "$logfile")
 
-availability=0
+status='degraded'
 if [[ $age -lt 300 ]]; then
-    availability=100
+    status='available'
 elif [[ $age -lt 600 ]]; then
-    availability=75
+    status='degraded'
 elif [[ $age -lt 1800 ]]; then
-    availability=25
+    status='unavailable'
 fi
 
 cat <<EOF > $tmpfile
 <?xml version="1.0" encoding="UTF-8"?>
 <serviceupdate xmlns="http://sls.cern.ch/SLS/XML/update">
   <id>PilotFactory_$shortname</id>
-  <availability>$availability</availability>
+  <status>$status</status>
   <webpage>http://apfmon.lancs.ac.uk</webpage>
   <contact>atlas-project-adc-operations-pilot-factory@cern.ch</contact>
   <timestamp>$timestamp</timestamp>
@@ -49,6 +49,7 @@ cat <<EOF > $tmpfile
 </serviceupdate>
 EOF
 
+#echo $tmpfile
 if ! curl -s -F file=@$tmpfile xsls.cern.ch >/dev/null ; then
   err "Error sending XML to xsls.cern.ch"
   exit 1
