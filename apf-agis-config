@@ -269,7 +269,7 @@ specified cloud and activity type.
                 print 'batchsubmitplugin = %s' % submitplugin
                 print 'batchsubmit.%s.gridresource = %s' % (submitpluginstring, gridresource)
                 print 'sched.maxtorun.maximum = %d' % 9999
-                if d[key]['site'] in ['IN2P3-CC', 'IN2P3-CC-T2']:
+                if d[key]['site'] in ['ANALY_IN2P3-CC','ANALY_IN2P3-CC_GLEXEC','ANALY_IN2P3-CC-T2_GLEXEC','ANALY_IN2P3-CC-T2','ANALY_IN2P3-CC-T2_HIMEM','IN2P3-CC-T2','IN2P3-CC','IN2P3-CC_HIMEM','IN2P3-CC_MCORE_HIMEM','IN2P3-CC_VVL']:
                     print 'schedplugin = Ready, Scale, MaxPerCycle, MinPerCycle, StatusTest, StatusOffline, MaxPending'
                     print 'sched.scale.factor = 0.04'
                 if creamenv:
