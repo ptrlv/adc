@@ -3,7 +3,7 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20150717
+VERSION=20150911
 
 function err() {
   date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@" >&2
@@ -49,14 +49,13 @@ function find_lfc_compatible_python() {
       lfc_test $pybin
       if [ $? = "0" ]; then
         log "refactor: this site has native python $pyver"
-        err "refactor: this site has native python $pyver"
         return 0
       else
         echo "Trying cvmfs version..."
       fi
     else
       log "refactor: this site has native python < 2.6.0"
-      err "refactor: this site has native python < 2.6.0"
+      err "warning: this site has native python < 2.6.0"
       echo "Native python $pybin is old: $pyver"
       echo "Trying cvmfs version..."
     fi
@@ -74,12 +73,12 @@ function find_lfc_compatible_python() {
       pybin=`which python`
       lfc_test $pybin
       if [ $? = "0" ]; then
-        log "refactor: this site using cvmfs python $pybin"
-        err "refactor: this site using cvmfs python $pybin"
+        log "warning: this site using cvmfs python $pybin"
+        err "warning: this site using cvmfs python $pybin"
         return 0
       fi
     else
-      echo "cvmfs python2.6 not found"
+      log "cvmfs python2.6 not found"
       err "not found: $PYTHON26"
     fi
 
@@ -97,8 +96,8 @@ function find_lfc_compatible_python() {
     pybin=python32
     lfc_test $pybin
     if [ $? == "0" ]; then
-        log "refactor: this site using python32 $pybin"
-        err "refactor: this site using python32 $pybin"
+        log "warning: this site using python32 $pybin"
+        err "warning: this site using python32 $pybin"
         return 0
     fi
 
