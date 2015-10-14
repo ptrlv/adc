@@ -10,7 +10,7 @@ from urllib import urlopen
 import sys
 import json
 
-VERSION=20150716
+VERSION=20151014
 
 defaultsection = """\
 
