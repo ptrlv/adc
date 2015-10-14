@@ -154,11 +154,11 @@ specified cloud and activity type.
                 if q['ce_status'] != 'production':
                     print
                     print "# Excluded, not 'production': %s/%s (ce_status = %s)" % (key, q['ce_name'], q['ce_status'])
-                    continue
+#                    continue
                 if q['ce_queue_status'] not in ["", 'Production']:
                     print
                     print "# Excluded, not 'Production': %s/%s (ce_queue_status = %s)" % (key, q['ce_name'], q['ce_queue_status'])
-                    continue
+#                    continue
                 gramqueue = None 
                 nordugridrsl = None 
                 submitplugin = None
@@ -167,6 +167,7 @@ specified cloud and activity type.
                 gramversion = None
                 creamenv = None
                 creamattr = ''
+                condorattr = False
 #                maxwctime = q['ce_queue_maxwctime']
             
                 if q['ce_flavour'] == 'OSG-CE':
@@ -252,6 +253,12 @@ specified cloud and activity type.
                     if maxtime and corecount:
                         totaltime = maxtime*corecount
                         rsladd += '(cputime = %d)' % totaltime
+
+                elif q['ce_flavour'] == 'HTCONDOR-CE':
+                    gridresource = q['ce_endpoint'].split(':')[0]
+                    submitplugin = 'CondorOSGCE'
+                    submitpluginstring = 'condorosgce'
+                    condorattr = True
                 else:
                     print
                     print "# Unknown ce_flavour (%s) for %s (%s)" % (q['ce_flavour'], q['ce_name'], q['ce_queue_id'])
@@ -269,7 +276,7 @@ specified cloud and activity type.
                 print 'batchsubmitplugin = %s' % submitplugin
                 print 'batchsubmit.%s.gridresource = %s' % (submitpluginstring, gridresource)
                 print 'sched.maxtorun.maximum = %d' % 9999
-                if d[key]['site'] in ['ANALY_IN2P3-CC','ANALY_IN2P3-CC_GLEXEC','ANALY_IN2P3-CC-T2_GLEXEC','ANALY_IN2P3-CC-T2','ANALY_IN2P3-CC-T2_HIMEM','IN2P3-CC-T2','IN2P3-CC','IN2P3-CC_HIMEM','IN2P3-CC_MCORE_HIMEM','IN2P3-CC_VVL']:
+                if d[key]['site'] in ['IN2P3-CC-T2','IN2P3-CC','IN2P3-CC_HIMEM','IN2P3-CC_MCORE_HIMEM','IN2P3-CC_VVL']:
                     print 'schedplugin = Ready, Scale, MaxPerCycle, MinPerCycle, StatusTest, StatusOffline, MaxPending'
                     print 'sched.scale.factor = 0.04'
                 if creamenv:
@@ -289,6 +296,10 @@ specified cloud and activity type.
                         print 'nordugridrsl.addenv.PILOT_HTTP_SOURCES = %s' % pilot_version
                 if gramqueue:
                     print 'globusrsl.%s.queue = %s' % (gramversion, gramqueue)
+                if condorattr:
+                    print 'batchsubmit.condorosgce.condor_attributes = periodic_remove = (JobStatus == 2 && (CurrentTime - EnteredCurrentStatus) > 604800)'
+                    print 'batchsubmit.condorosgce.condor_attributes.+maxMemory = %d' % maxmemory
+                    print 'batchsubmit.condorosgce.condor_attributes.+xcount = %d' % corecount
                 if options.activity == 'analysis':
                     print 'batchsubmit.%s.proxy = atlas-analysis' % submitpluginstring
                     if d[key]['country'] == 'France':
