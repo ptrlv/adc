@@ -3,7 +3,7 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20150911
+VERSION=20151016
 
 function err() {
   date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@" >&2
@@ -291,6 +291,11 @@ function main() {
   
   echo "---- Proxy Information ----"
   voms-proxy-info -all
+  if [[ "$?" -ne 0 ]]; then
+    log "FATAL: error running: voms-proxy-info -all"
+    err "FATAL: error running: voms-proxy-info -all"
+    exit 1
+  fi
   echo
   
   # refactor
