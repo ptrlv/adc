@@ -1,0 +1,83 @@
+#!/bin/gawk -f
+
+# Extract job timings from condor logs
+# All logs have 'submitted' and either 'aborted' or 'terminated' lines, but
+# this should be checked
+
+# Usage:
+# ./qtime -vFACTORY=aipanda024 UKI-NORTHGRID-LANCS*/*log
+
+function csvout(event, delta)
+{
+  OFS=","
+  print (FACTORY, jobid, q, tsub, event, delta)
+}
+
+function stamp()
+{
+  split($3,d,"/")
+  gsub(/:/," ",$4)
+  return mktime("2015 " d[1] " " d[2] " " $4)
+}
+
+FNR == 1 {
+  n = split(FILENAME,arr,"/")
+  q = arr[n-1]
+}
+
+BEGIN {
+  print "factory,jobid,queue,tsub,event,delta"
+}
+
+match($0, /Job submitted from host/) {
+  t = stamp()
+  tsub = t
+  submitted[NR] = tsub
+  gsub(/[(¦)]/, "", $2)
+  jobid = $2
+}
+
+match($0, /Job was held/) {
+  t = stamp()
+  delta = t - tsub
+  gridsub[NR] = tgrid
+  csvout("t2held", delta)
+}
+
+match($0, /Job submitted to grid resource/) {
+  t = stamp()
+  delta = t - tsub
+  gridsub[NR] = tgrid
+  csvout("t2grid", delta)
+}
+
+match($0, /Job was aborted by the user/) {
+  t = stamp()
+  delta = t - tsub
+  aborted[NR] = delta
+  csvout("t2abort", delta)
+}
+
+match($0, /Job executing on host/) {
+  t = stamp()
+  delta = t - tsub
+  executed[NR] = delta
+  csvout("t2exe", delta)
+}
+
+match($0, /Job terminated/) {
+  t = stamp()
+  delta = t - tsub
+  terminated[NR] = delta
+  csvout("t2term", delta)
+}
+
+# end of each file FNR==xxx ??
+# print single record here containing all times per .log file??
+
+END { 
+hdr = "%-45s %-12s %-12s %-12s %-6s\n"
+printf hdr, "Queue", "Submitted", "Terminated", "Aborted", "Sanity"
+fmt = "%-45s %-12d %-12d %-12d %-6d\n"
+printf(fmt, q, length(submitted), length(terminated), length(aborted), length(submitted)-length(terminated)-length(aborted))
+}
