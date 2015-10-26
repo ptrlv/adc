@@ -15,9 +15,11 @@ function csvout(event, delta)
 
 function stamp()
 {
+  # condor log excludes any year field so assume current year
+  # obvious caution if this assumption is not true
   split($3,d,"/")
   gsub(/:/," ",$4)
-  return mktime("2015 " d[1] " " d[2] " " $4)
+  return mktime(strftime("%Y") " " d[1] " " d[2] " " $4)
 }
 
 FNR == 1 {
