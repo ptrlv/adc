@@ -448,6 +448,8 @@ while getopts 'h:p:s:u:w:' flag; do
     u) uflag="${OPTARG}" ;;
     w) wflag="${OPTARG}" ;;
     A) aflag="${OPTARG}" ;;
+    v) vflag="${OPTARG}" ;;
+    o) oflag="${OPTARG}" ;;
     *) log "Unexpected option ${flag}" ;;
   esac
 done
