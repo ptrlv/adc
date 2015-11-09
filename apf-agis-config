@@ -142,6 +142,7 @@ specified cloud and activity type.
             maxtime = d[key]['maxtime']
             maxmemory = d[key]['maxmemory']
             corecount = d[key]['corecount']
+            ismcore = corecount > 1
             maxrss = d[key].get('maxrss', 0)
             maxswap = d[key].get('maxswap', 0)
             pilot_version = d[key].get('pilot_version', 'current')
@@ -301,10 +302,16 @@ specified cloud and activity type.
                     print 'batchsubmit.condorosgce.condor_attributes.+maxMemory = %d' % maxmemory
                     print 'batchsubmit.condorosgce.condor_attributes.+xcount = %d' % corecount
                 if options.activity == 'analysis':
-                    print 'batchsubmit.%s.proxy = atlas-analysis' % submitpluginstring
+                    if ismcore:
+                        print 'batchsubmit.%s.proxy = atlas-analy-mcore' % submitpluginstring
+                    else:
+                        print 'batchsubmit.%s.proxy = atlas-analysis' % submitpluginstring
                     print 'executable.arguments = %(executable.defaultarguments)s -u user'
                 elif options.activity == 'production':
-                    print 'batchsubmit.%s.proxy = atlas-production' % submitpluginstring
+                    if ismcore:
+                        print 'batchsubmit.%s.proxy = atlas-prod-mcore' % submitpluginstring
+                    else:
+                        print 'batchsubmit.%s.proxy = atlas-production' % submitpluginstring
                     print 'executable.arguments = %(executable.defaultarguments)s'
                 elif options.activity == 'ptest':
                     print 'batchsubmit.%s.proxy = atlas-production' % submitpluginstring
