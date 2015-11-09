@@ -314,7 +314,10 @@ specified cloud and activity type.
                         print 'batchsubmit.%s.proxy = atlas-production' % submitpluginstring
                     print 'executable.arguments = %(executable.defaultarguments)s'
                 elif options.activity == 'ptest':
-                    print 'batchsubmit.%s.proxy = atlas-production' % submitpluginstring
+                    if ismcore:
+                        print 'batchsubmit.%s.proxy = atlas-production' % submitpluginstring
+                    else:
+                        print 'batchsubmit.%s.proxy = atlas-prod-mcore' % submitpluginstring
                     print 'executable.arguments = %(executable.defaultarguments)s -u ptest'
 
         except KeyError, e:
