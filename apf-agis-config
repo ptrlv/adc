@@ -30,8 +30,8 @@ schedplugin = Ready
 monitorsection = apfmon-lancaster
 
 schedplugin = Ready, Scale, MaxPerCycle, MinPerCycle, StatusTest, StatusOffline, MaxPending
-sched.maxpending.maximum = 10
-sched.maxpercycle.maximum = 5
+sched.maxpending.maximum = 50
+sched.maxpercycle.maximum = 20
 sched.minpercycle.minimum = 0
 sched.scale.factor = 0.10
 sched.statusoffline.allowed = True
