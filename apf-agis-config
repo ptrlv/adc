@@ -10,7 +10,7 @@ from urllib import urlopen
 import sys
 import json
 
-VERSION=20151106
+VERSION=20151210
 
 defaultsection = """\
 
@@ -30,10 +30,10 @@ schedplugin = Ready
 monitorsection = apfmon-lancaster
 
 schedplugin = Ready, Scale, MaxPerCycle, MinPerCycle, StatusTest, StatusOffline, MaxPending
-sched.maxpending.maximum = 50
-sched.maxpercycle.maximum = 20
+sched.maxpending.maximum = 100
+sched.maxpercycle.maximum = 50
 sched.minpercycle.minimum = 0
-sched.scale.factor = 0.10
+sched.scale.factor = 0.50
 sched.statusoffline.allowed = True
 sched.statusoffline.pilots = 0
 sched.statustest.allowed = True
@@ -46,7 +46,7 @@ req = requirements = JobRunCount == 0
 hold = periodic_hold = ( JobStatus==1 && gridjobstatus=?=UNDEFINED && CurrentTime-EnteredCurrentStatus>3600 ) || ( JobStatus == 1 && (JobRunCount =!= UNDEFINED && JobRunCount > 0) ) || ( JobStatus == 2 && CurrentTime-EnteredCurrentStatus>259200 )
 remove = periodic_remove = (JobStatus == 5 && (CurrentTime - EnteredCurrentStatus) > 3600) || (JobStatus == 1 && globusstatus =!= 1 && (CurrentTime - EnteredCurrentStatus) > 86400)
 
-apfqueue.sleep = 300
+apfqueue.sleep = 120
 
 """
 
