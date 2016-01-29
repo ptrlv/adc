@@ -31,7 +31,7 @@ specified cloud and activity type.
                        help="activity filter ('analysis' [default] or 'production')")
     parser.add_option("-k",
                        dest="keyname",
-                       default="ce_name",
+                       default="panda_resource",
                        action="store",
                        type="string",
                        help="name of queue key")
@@ -79,8 +79,7 @@ specified cloud and activity type.
            if d[key]['vo_name'] != 'atlas':
                continue
            if d[key]['site_state'] == 'ACTIVE' and d[key]['type'] == options.activity:
-               maxrss = d[key]['maxrss']
-               print key, 'maxrss:', maxrss
+               print '%s %s: %s' % (key, options.keyname, d[key][options.keyname])
                                
 
        except KeyError, e:
