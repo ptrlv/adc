@@ -29,19 +29,21 @@ timestamp=$(date +%Y-%m-%dT%H:%M:%S)
 apflogage=$(age "$logfile")
 
 status='degraded'
-if [[ $age -lt 300 ]]; then
+if [[ $apflogage -lt 300 ]]; then
   status='available'
-elif [[ $age -lt 600 ]]; then
+elif [[ $apflogage -lt 600 ]]; then
   status='degraded'
-elif [[ $age -lt 1800 ]]; then
+elif [[ $apflogage -lt 1800 ]]; then
   status='unavailable'
 fi
 
 
 logfile=/var/log/condor/MasterLog
+shortname=$(hostname -s)
+timestamp=$(date +%Y-%m-%dT%H:%M:%S)
 masterlogage=$(age "$logfile")
 
-if [[ $age -lt 600 ]]; then
+if [[ $masterlogage -lt 600 ]]; then
   status='unavailable'
 fi
 
