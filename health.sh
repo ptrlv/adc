@@ -39,8 +39,6 @@ fi
 
 
 logfile=/var/log/condor/MasterLog
-shortname=$(hostname -s)
-timestamp=$(date +%Y-%m-%dT%H:%M:%S)
 masterlogage=$(age "$logfile")
 
 if [[ $age -lt 600 ]]; then
