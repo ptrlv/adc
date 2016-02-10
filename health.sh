@@ -21,18 +21,30 @@ function age() {
 }
 
 tmpfile=$(mktemp)
+
+# check apf.log has recently being written to
 logfile=/var/log/apf/apf.log
 shortname=$(hostname -s)
 timestamp=$(date +%Y-%m-%dT%H:%M:%S)
-logage=$(age "$logfile")
+apflogage=$(age "$logfile")
 
 status='degraded'
 if [[ $age -lt 300 ]]; then
-    status='available'
+  status='available'
 elif [[ $age -lt 600 ]]; then
-    status='degraded'
+  status='degraded'
 elif [[ $age -lt 1800 ]]; then
-    status='unavailable'
+  status='unavailable'
+fi
+
+
+logfile=/var/log/condor/MasterLog
+shortname=$(hostname -s)
+timestamp=$(date +%Y-%m-%dT%H:%M:%S)
+masterlogage=$(age "$logfile")
+
+if [[ $age -lt 600 ]]; then
+  status='unavailable'
 fi
 
 cat <<EOF > $tmpfile
@@ -44,7 +56,8 @@ cat <<EOF > $tmpfile
   <contact>atlas-project-adc-operations-pilot-factory@cern.ch</contact>
   <timestamp>$timestamp</timestamp>
   <data>
-    <numericvalue desc="Age of log file in seconds" name="age">$logage</numericvalue>
+    <numericvalue desc="Age of apf.log in seconds" name="age">$apflogage</numericvalue>
+    <numericvalue desc="Age of MasterLog in seconds" name="age">$masterlogage</numericvalue>
   </data>
 </serviceupdate>
 EOF
