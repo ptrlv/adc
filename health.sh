@@ -38,12 +38,12 @@ elif [[ $apflogage -lt 1800 ]]; then
 fi
 
 
-logfile=/var/log/condor/MasterLog
+logfile=/var/log/condor/GridmanagerLog.apf
 shortname=$(hostname -s)
 timestamp=$(date +%Y-%m-%dT%H:%M:%S)
-masterlogage=$(age "$logfile")
+gridage=$(age "$logfile")
 
-if [[ $masterlogage -lt 600 ]]; then
+if [[ $gridage -lt 600 ]]; then
   status='unavailable'
 fi
 
@@ -57,7 +57,7 @@ cat <<EOF > $tmpfile
   <timestamp>$timestamp</timestamp>
   <data>
     <numericvalue desc="Age of apf.log in seconds" name="age">$apflogage</numericvalue>
-    <numericvalue desc="Age of MasterLog in seconds" name="age">$masterlogage</numericvalue>
+    <numericvalue desc="Age of MasterLog in seconds" name="age">$gridage</numericvalue>
   </data>
 </serviceupdate>
 EOF
