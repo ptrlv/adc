@@ -29,12 +29,16 @@ timestamp=$(date +%Y-%m-%dT%H:%M:%S)
 apflogage=$(age "$logfile")
 
 status='degraded'
+msg='All ok'
 if [[ $apflogage -lt 300 ]]; then
   status='available'
+  msg='No activity seen for 5 minutes in apf.log'
 elif [[ $apflogage -lt 600 ]]; then
   status='degraded'
+  msg='No activity seen for 10 minutes in apf.log'
 elif [[ $apflogage -lt 1800 ]]; then
   status='unavailable'
+  msg='No activity seen for 30 minutes in apf.log'
 fi
 
 
@@ -45,6 +49,7 @@ gridage=$(age "$logfile")
 
 if [[ $gridage -lt 600 ]]; then
   status='unavailable'
+  msg='No activity seen for 10 minutes in GridmanagerLog'
 fi
 
 cat <<EOF > $tmpfile
@@ -55,6 +60,7 @@ cat <<EOF > $tmpfile
   <webpage>http://apfmon.lancs.ac.uk</webpage>
   <contact>atlas-project-adc-operations-pilot-factory@cern.ch</contact>
   <availabilitydesc>Checks for recent activity in APF and condor logs</availabilitydesc>
+  <availabilityinfo>$msg</availabilityinfo>
   <timestamp>$timestamp</timestamp>
   <data>
     <numericvalue desc="Age of apf.log in seconds" name="age">$apflogage</numericvalue>
