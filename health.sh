@@ -29,10 +29,10 @@ timestamp=$(date +%Y-%m-%dT%H:%M:%S)
 apflogage=$(age "$logfile")
 
 status='degraded'
-msg='All ok'
+msg='Degraded'
 if [[ $apflogage -lt 300 ]]; then
   status='available'
-  msg='No activity seen for 5 minutes in apf.log'
+  msg='OK, activity seen in last 5 minutes in apf.log'
 elif [[ $apflogage -lt 600 ]]; then
   status='degraded'
   msg='No activity seen for 10 minutes in apf.log'
@@ -47,7 +47,7 @@ shortname=$(hostname -s)
 timestamp=$(date +%Y-%m-%dT%H:%M:%S)
 gridage=$(age "$logfile")
 
-if [[ $gridage -lt 600 ]]; then
+if [[ $gridage -gt 600 ]]; then
   status='unavailable'
   msg='No activity seen for 10 minutes in GridmanagerLog'
 fi
@@ -70,7 +70,7 @@ cat <<EOF > $tmpfile
 EOF
 
 #echo $tmpfile
-if ! curl -s -F file=@$tmpfile xsls.cern.ch >/dev/null ; then
+if ! curl -i -s -F file=@$tmpfile xsls.cern.ch >/dev/null ; then
   err "Error sending XML to xsls.cern.ch"
   exit 1
 fi
