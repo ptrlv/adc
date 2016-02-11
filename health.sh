@@ -54,6 +54,7 @@ cat <<EOF > $tmpfile
   <status>$status</status>
   <webpage>http://apfmon.lancs.ac.uk</webpage>
   <contact>atlas-project-adc-operations-pilot-factory@cern.ch</contact>
+  <availabilitydesc>Checks for recent activity in APF and condor logs</availabilitydesc>
   <timestamp>$timestamp</timestamp>
   <data>
     <numericvalue desc="Age of apf.log in seconds" name="age">$apflogage</numericvalue>
