@@ -23,19 +23,22 @@ since=$(date --date="$t seconds ago" +%s)
 
 counter=0
 while read -r line ; do
-    jobid=$(echo $line | awk '{print $1}')
-    jobstate=$(echo $line | awk '{print $2}')
-    jid=$factory:$jobid
-    if [ "$jobstate" -eq "3" ]; then
-      state="fault"
-    elif [ "$jobstate" -eq "4" ]; then
-      state="done"
-    else
-      state="$jobstate"
-    fi
-    curl --silent -d state=$state http://apfmon.lancs.ac.uk/api/jobs/$jid &>/dev/null
-    echo $jid $state
-    counter=$((counter+1))
+  if echo $line | grep --quiet 'Warning: Bad history file'; then
+    continue
+  fi
+  jobid=$(echo $line | awk '{print $1}')
+  jobstate=$(echo $line | awk '{print $2}')
+  jid=$factory:$jobid
+  if [ "$jobstate" -eq "3" ]; then
+    state="fault"
+  elif [ "$jobstate" -eq "4" ]; then
+    state="done"
+  else
+    state="$jobstate"
+  fi
+  curl --silent -d state=$state http://apfmon.lancs.ac.uk/api/jobs/$jid &>/dev/null
+  echo $jid $state
+  counter=$((counter+1))
 
 done < <(condor_history -file $1 -match $N -const "EnteredCurrentStatus>=$since" \
 -format '%4d.' ClusterId \
