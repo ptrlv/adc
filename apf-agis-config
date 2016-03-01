@@ -152,13 +152,13 @@ specified cloud and activity type.
                     print
                     print "# Excluded, not 'ACTIVE': %s/%s (ce_state = %s)" % (key, q['ce_name'], q['ce_state'])
                     continue
-                if q['ce_status'] != 'production':
+                if q['ce_status'] not in ['production', 'Production']:
                     print
-                    print "# Excluded, not 'production': %s/%s (ce_status = %s)" % (key, q['ce_name'], q['ce_status'])
+                    print "# Warning, not 'production': %s/%s (ce_status = %s)" % (key, q['ce_name'], q['ce_status'])
 #                    continue
-                if q['ce_queue_status'] not in ["", 'Production']:
+                if q['ce_queue_status'] not in ["", 'production', 'Production']:
                     print
-                    print "# Excluded, not 'Production': %s/%s (ce_queue_status = %s)" % (key, q['ce_name'], q['ce_queue_status'])
+                    print "# Warning, not 'Production': %s/%s (ce_queue_status = %s)" % (key, q['ce_name'], q['ce_queue_status'])
 #                    continue
                 gramqueue = None 
                 nordugridrsl = None 
