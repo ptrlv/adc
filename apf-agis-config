@@ -244,11 +244,13 @@ specified cloud and activity type.
                     if maxrss and corecount:
                         percore = maxrss/corecount
                         rsladd += '(memory = %d)' % percore
+                    elif maxrss:
+                        rsladd += '(memory = %d)' % maxrss
                     elif maxmemory and corecount:
                         percore = maxmemory/corecount
                         rsladd += '(memory = %d)' % percore
-                    elif memory:
-                        rsladd += '(memory = %d)' % memory
+                    elif maxmemory:
+                        rsladd += '(memory = %d)' % maxmemory
                     if maxtime:
                         rsladd += '(walltime = %d)' % maxtime
                     if maxtime and corecount:
@@ -273,7 +275,6 @@ specified cloud and activity type.
                 print 'enabled = True'
                 print 'batchqueue = %s' % key
                 print 'wmsqueue = %s' % wmsqueue
-#                print 'memory = %s' % memory
                 print 'batchsubmitplugin = %s' % submitplugin
                 print 'batchsubmit.%s.gridresource = %s' % (submitpluginstring, gridresource)
                 print 'sched.maxtorun.maximum = %d' % 9999
