@@ -47,9 +47,9 @@ shortname=$(hostname -s)
 timestamp=$(date +%Y-%m-%dT%H:%M:%S)
 gridage=$(age "$logfile")
 
-if [[ $gridage -gt 600 ]]; then
+if [[ $gridage -gt 1200 ]]; then
   status='unavailable'
-  msg='No activity seen for 10 minutes in GridmanagerLog'
+  msg='No activity seen for 30 minutes in GridmanagerLog'
 fi
 
 cat <<EOF > $tmpfile
@@ -64,7 +64,7 @@ cat <<EOF > $tmpfile
   <timestamp>$timestamp</timestamp>
   <data>
     <numericvalue desc="Age of apf.log in seconds" name="age">$apflogage</numericvalue>
-    <numericvalue desc="Age of MasterLog in seconds" name="age">$gridage</numericvalue>
+    <numericvalue desc="Age of GridmanagerLog in seconds" name="age">$gridage</numericvalue>
   </data>
 </serviceupdate>
 EOF
