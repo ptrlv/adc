@@ -7,5 +7,5 @@ for f in /var/lib/condor/spool/history.*; do
   p=${bn/history/parsed}
   echo /data/plove/$p
   if [ -f $p ]; then continue; fi
-  condor_history -l -file $f > $p
+  condor_history -l -file $f > /data/plove/$p
 done
