@@ -300,7 +300,10 @@ specified cloud and activity type.
                     print 'globusrsl.%s.queue = %s' % (gramversion, gramqueue)
                 if condorattr:
                     print 'batchsubmit.condorosgce.condor_attributes = periodic_remove = (JobStatus == 2 && (CurrentTime - EnteredCurrentStatus) > 604800)'
-                    print 'batchsubmit.condorosgce.condor_attributes.+maxMemory = %d' % maxmemory
+                    if maxrss:
+                        print 'batchsubmit.condorosgce.condor_attributes.+maxMemory = %d' % maxrss
+                    else:
+                        print 'batchsubmit.condorosgce.condor_attributes.+maxMemory = %d' % maxmemory
                     print 'batchsubmit.condorosgce.condor_attributes.+xcount = %d' % corecount
                 if options.activity == 'analysis':
                     if ismcore:
