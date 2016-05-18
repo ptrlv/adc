@@ -20,8 +20,9 @@ function age() {
   echo $elapsed
 }
 
-tmpfile=$(mktemp)
+tmpfile=$(mktemp /var/log/apf/health.XXXXX)
 
+# Test 1
 # check apf.log has recently being written to
 logfile=/var/log/apf/apf.log
 shortname=$(hostname -s)
@@ -42,6 +43,29 @@ elif [[ $apflogage -lt 1800 ]]; then
 fi
 
 
+
+# Test 2
+# 'condor_q | tail -1' example output:
+# 8848 jobs; 10 completed, 0 removed, 1662 idle, 7176 running, 0 held, 0 suspended
+summary=$(condor_q | tail -1)
+
+total=$(echo $summary | cut -d' ' -f1)
+completed=$(echo $summary | cut -d' ' -f3)
+removed=$(echo $summary | cut -d' ' -f5)
+idle=$(echo $summary | cut -d' ' -f7)
+running=$(echo $summary | cut -d' ' -f9)
+
+if [[ $completed -gt 5000 ]]; then
+  status='degraded'
+  msg='Number of completed jobs too high (>5000)'
+fi
+
+if [[ $removed -gt 5000 ]]; then
+  status='degraded'
+  msg='Number of removed jobs too high (>5000)'
+fi
+
+# Test 3
 logfile=/var/log/condor/GridmanagerLog.apf
 shortname=$(hostname -s)
 timestamp=$(date +%Y-%m-%dT%H:%M:%S)
@@ -65,6 +89,8 @@ cat <<EOF > $tmpfile
   <data>
     <numericvalue desc="Age of apf.log in seconds" name="age">$apflogage</numericvalue>
     <numericvalue desc="Age of GridmanagerLog in seconds" name="age">$gridage</numericvalue>
+    <numericvalue desc="Number of Completed jobs in condor" name="completed">$completed</numericvalue>
+    <numericvalue desc="Number of Removed jobs in condor" name="removed">$removed</numericvalue>
   </data>
 </serviceupdate>
 EOF
@@ -75,7 +101,8 @@ if ! curl -i -s -F file=@$tmpfile xsls.cern.ch >/dev/null ; then
   exit 1
 fi
 
-rm -f $tmpfile
+# remove files older than 2880 minutes (48 hours)
+find /var/log/apf ! -readable -prune -o -type f -name 'health*' -mmin +1440 -delete
 
 # check validity
 #xmllint --noout --schema http://itmon.web.cern.ch/itmon/files/xsls_schema.xsd $tmpfile
