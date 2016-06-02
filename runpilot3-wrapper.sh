@@ -3,7 +3,7 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20151103
+VERSION=20160602
 
 function err() {
   date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@" >&2
@@ -27,6 +27,7 @@ try:
     print "LFC module imported ok."
 except:
     print "Failed to import LFC module."
+    monexiting 1
     sys.exit(1)
 EOF
 }
@@ -104,6 +105,7 @@ function find_lfc_compatible_python() {
     # Oh dear, we're doomed...
     log "ERROR: Failed to find an LFC compatible python, exiting"
     err "ERROR: Failed to find an LFC compatible python, exiting"
+    monexiting 1
     exit 1
 }
 
@@ -267,6 +269,7 @@ function main() {
     log "Failed: mktemp $templ"
     err "Exiting."
     log "Exiting."
+    monexiting 1
     exit 1
   fi
     
@@ -278,6 +281,7 @@ function main() {
   if [[ "$?" -ne 0 ]]; then
     log "FATAL: failed to retrieve pilot code"
     err "FATAL: failed to retrieve pilot code"
+    monexiting 1
     exit 1
   fi
   
@@ -294,6 +298,7 @@ function main() {
   if [[ "$?" -ne 0 ]]; then
     log "FATAL: error running: voms-proxy-info -all"
     err "FATAL: error running: voms-proxy-info -all"
+    monexiting 1
     exit 1
   fi
   echo
@@ -329,6 +334,7 @@ function main() {
   else
     log "ERROR: Failed to find VO_ATLAS_SW_DIR or OSG_APP. This is a bad site, exiting."
     err "ERROR: Failed to find VO_ATLAS_SW_DIR or OSG_APP. This is a bad site, exiting."
+    monexiting 1
     exit 1
     ATLAS_AREA=/bad_site
   fi
@@ -341,6 +347,7 @@ function main() {
   else
     err "ERROR: tags file does not exist: $ATLAS_AREA/tags, exiting."
     log "ERROR: tags file does not exist: $ATLAS_AREA/tags, exiting."
+    monexiting 1
     exit 1
   fi
   echo
@@ -357,6 +364,7 @@ function main() {
   else
     log "WARNING: No DDM setup found to source, exiting."
     err "WARNING: No DDM setup found to source, exiting."
+    monexiting 1
     exit 1
   fi
   echo
