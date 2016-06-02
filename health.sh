@@ -102,7 +102,7 @@ if ! curl -i -s -F file=@$tmpfile xsls.cern.ch >/dev/null ; then
 fi
 
 # remove files older than 2880 minutes (48 hours)
-find /var/log/apf ! -readable -prune -o -type f -name 'health*' -mmin +1440 -delete
+find /var/log/apf/ -type f -name health.* -mmin +1440 -delete
 
 # check validity
 #xmllint --noout --schema http://itmon.web.cern.ch/itmon/files/xsls_schema.xsd $tmpfile
