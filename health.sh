@@ -12,8 +12,12 @@ function err() {
 
 function age() {
   local filename=$1
-  local changed=$(stat -c %Y "$filename")
   local now=$(date +%s)
+  local changed=$(stat -c %Y "$filename")
+  if [[ $changed -eq 0 ]]; then
+    err "Bad stat call"
+    let changed=now
+  fi
   local elapsed
 
   let elapsed=now-changed
