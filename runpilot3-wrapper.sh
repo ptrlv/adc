@@ -3,7 +3,7 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20160602
+VERSION=20160614
 
 function err() {
   date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@" >&2
@@ -27,7 +27,6 @@ try:
     print "LFC module imported ok."
 except:
     print "Failed to import LFC module."
-    monexiting 1
     sys.exit(1)
 EOF
 }
