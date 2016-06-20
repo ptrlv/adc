@@ -91,10 +91,13 @@ cat <<EOF > $tmpfile
   <availabilityinfo>$msg</availabilityinfo>
   <timestamp>$timestamp</timestamp>
   <data>
-    <numericvalue desc="Age of autopyfactory.log in seconds" name="age">$apflogage</numericvalue>
-    <numericvalue desc="Age of GridmanagerLog in seconds" name="age">$gridage</numericvalue>
-    <numericvalue desc="Number of Completed jobs in condor" name="completed">$completed</numericvalue>
-    <numericvalue desc="Number of Removed jobs in condor" name="removed">$removed</numericvalue>
+    <numericvalue desc="Age of autopyfactory.log in seconds" name="apfage">$apflogage</numericvalue>
+    <numericvalue desc="Age of GridmanagerLog in seconds" name="gridmanagerage">$gridage</numericvalue>
+    <numericvalue desc="Total number of jobs in condor" name="total">$total</numericvalue>
+    <numericvalue desc="Number of completed jobs in condor" name="completed">$completed</numericvalue>
+    <numericvalue desc="Number of removed jobs in condor" name="removed">$removed</numericvalue>
+    <numericvalue desc="Number of idle jobs in condor" name="idle">$idle</numericvalue>
+    <numericvalue desc="Number of running jobs in condor" name="running">$running</numericvalue>
   </data>
 </serviceupdate>
 EOF
