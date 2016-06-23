@@ -104,7 +104,7 @@ function find_lfc_compatible_python() {
     # Oh dear, we're doomed...
     log "ERROR: Failed to find an LFC compatible python, exiting"
     err "ERROR: Failed to find an LFC compatible python, exiting"
-    monexiting 1
+    monfault 1
     exit 1
 }
 
@@ -173,7 +173,22 @@ function monexiting() {
     log $out
   else
     err "warning: wrapper monitor"
-    err "ARGS: -d state=exiting -d rc=$1 -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}"
+    err "ARGS: -d state=exiting -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}"
+  fi
+}
+
+function monfault() {
+  if [ -z ${APFMON:-} ]; then
+    err 'wrapper monitoring not configured'
+    return
+  fi
+
+  out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=fault -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID})
+  if [[ "$?" -eq 0 ]]; then
+    log $out
+  else
+    err "warning: wrapper monitor"
+    err "ARGS: -d state=fault -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}"
   fi
 }
 
@@ -268,7 +283,7 @@ function main() {
     log "Failed: mktemp $templ"
     err "Exiting."
     log "Exiting."
-    monexiting 1
+    monfault 1
     exit 1
   fi
     
@@ -280,7 +295,7 @@ function main() {
   if [[ "$?" -ne 0 ]]; then
     log "FATAL: failed to retrieve pilot code"
     err "FATAL: failed to retrieve pilot code"
-    monexiting 1
+    monfault 1
     exit 1
   fi
   
@@ -297,7 +312,7 @@ function main() {
   if [[ "$?" -ne 0 ]]; then
     log "FATAL: error running: voms-proxy-info -all"
     err "FATAL: error running: voms-proxy-info -all"
-    monexiting 1
+    monfault exiting 1
     exit 1
   fi
   echo
@@ -333,7 +348,7 @@ function main() {
   else
     log "ERROR: Failed to find VO_ATLAS_SW_DIR or OSG_APP. This is a bad site, exiting."
     err "ERROR: Failed to find VO_ATLAS_SW_DIR or OSG_APP. This is a bad site, exiting."
-    monexiting 1
+    monfault 1
     exit 1
     ATLAS_AREA=/bad_site
   fi
@@ -346,7 +361,7 @@ function main() {
   else
     err "ERROR: tags file does not exist: $ATLAS_AREA/tags, exiting."
     log "ERROR: tags file does not exist: $ATLAS_AREA/tags, exiting."
-    monexiting 1
+    monfault 1
     exit 1
   fi
   echo
@@ -363,7 +378,7 @@ function main() {
   else
     log "WARNING: No DDM setup found to source, exiting."
     err "WARNING: No DDM setup found to source, exiting."
-    monexiting 1
+    monfault 1
     exit 1
   fi
   echo
