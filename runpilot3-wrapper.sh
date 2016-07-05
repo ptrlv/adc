@@ -3,7 +3,7 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20160623-leave
+VERSION=20160705
 
 function err() {
   date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@" >&2
@@ -368,9 +368,9 @@ function main() {
   
   # setup DDM client
   echo "---- DDM setup ----"
-  if [ -f /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh ]; then
-    echo "Sourcing /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh"
-    source /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh
+  if [ -f /cvmfs/atlas.cern.ch/repo/sw/ddm/rucio-clients/latest/setup.sh ]; then
+    echo "Sourcing /cvmfs/atlas.cern.ch/repo/sw/ddm/rucio-clients/latest/setup.sh"
+    source /cvmfs/atlas.cern.ch/repo/sw/ddm/rucio-clients/latest/setup.sh
   elif [ -f $ATLAS_AREA/ddm/latest/setup.sh ]; then
     echo "Sourcing $ATLAS_AREA/ddm/latest/setup.sh"
     err "refactor: sourcing $ATLAS_AREA/ddm/latest/setup.sh"
