@@ -370,7 +370,7 @@ function main() {
   echo "---- DDM setup ----"
   if [ -f /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh ]; then
     echo "Sourcing /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh"
-    RUCIO_HOME=/cvmfs/atlas.cern.ch/repo/sw/ddm/rucio-clients/1.4.6
+    export RUCIO_HOME=/cvmfs/atlas.cern.ch/repo/sw/ddm/rucio-clients/1.4.6
     source /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh
   elif [ -f $ATLAS_AREA/ddm/latest/setup.sh ]; then
     echo "Sourcing $ATLAS_AREA/ddm/latest/setup.sh"
