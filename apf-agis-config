@@ -121,9 +121,13 @@ specified cloud and activity type.
                 continue
 
             if d[key]['pilot_manager'] != 'APF':
-                print
-                print "# Excluded, not APF: %s/%s (pilot_manager = %s)" % (d[key]['site'], key, d[key]['pilot_manager'])
-                continue
+                if options.activity == 'ptest' and d[key]['ptest']: 
+                    # let APF submit ptest jobs for non-APF pilot_managers
+                    pass
+                else:
+                    print
+                    print "# Excluded, not APF: %s/%s (pilot_manager = %s)" % (d[key]['site'], key, d[key]['pilot_manager'])
+                    continue
             if d[key]['resource_type'] != 'GRID':
                 print
                 print "# Excluded, not GRID: %s/%s (resource_type = %s)" % (d[key]['site'], key, d[key]['resource_type'])
