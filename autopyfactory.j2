@@ -1,0 +1,30 @@
+[Factory]
+
+factoryAdminEmail = p.love@lancaster.ac.uk
+factoryId = {{ factoryid }}
+factoryUser = autopyfactory
+enablequeues = True
+factorySMTPServer = localhost
+
+queueDirConf = /etc/autopyfactory/queues.d/
+
+proxyConf = /etc/autopyfactory/proxy.conf
+proxymanager.enabled = True
+proxymanager.sleep = 30
+
+monitorConf = /etc/autopyfactory/monitor.conf
+mappingsConf = /etc/autopyfactory/mappings.conf
+
+cycles = None
+cleanlogs.keepdays = 14
+
+factory.sleep = 240
+wmsstatus.panda.sleep = 150
+batchstatus.condor.sleep = 150
+
+baseLogDir = /data/pilots
+baseLogDirUrl = http://{{ inventory_hostname }}/pilots
+
+logserver.enabled = False
+logserver.index = True
+logserver.allowrobots = False
