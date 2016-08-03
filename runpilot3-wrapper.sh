@@ -3,7 +3,7 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20160711
+VERSION=20160803
 
 function err() {
   date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@" >&2
@@ -13,25 +13,7 @@ function log() {
   date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@"
 }
 
-function lfc_test() {
-    echo -n "Testing LFC module for $1: "
-    which $1 &> /dev/null
-    if [ $? != "0" ]; then
-        echo "No $1 found in path."
-        return 1
-    fi
-    $1 <<EOF
-import sys
-try:
-    import lfc
-    print "LFC module imported ok."
-except:
-    print "Failed to import LFC module."
-    sys.exit(1)
-EOF
-}
-
-function find_lfc_compatible_python() {
+function find_compatible_python() {
     ## Try to figure out what python to run
 
     # We _do_not_ now try to use python from the ATLAS release
@@ -45,67 +27,18 @@ function find_lfc_compatible_python() {
     pyver=`$pybin -c "import sys; print '%03d%03d%03d' % sys.version_info[0:3]"`
     # check if native python version > 2.6.0
     if [ $pyver -ge 002006000 ] ; then
-      echo "Native python version is > 2.6.0"
-      lfc_test $pybin
-      if [ $? = "0" ]; then
-        log "refactor: this site has native python $pyver"
-        return 0
-      else
-        echo "Trying cvmfs version..."
-      fi
+      log "Native python version is > 2.6.0 ($pyver)"
     else
       log "refactor: this site has native python < 2.6.0"
       err "warning: this site has native python < 2.6.0"
-      echo "Native python $pybin is old: $pyver"
-      echo "Trying cvmfs version..."
-    fi
+      log "Native python $pybin is old: $pyver"
     
-    # try the cvmfs python2.6 binary
-    PYTHON26=/cvmfs/atlas.cern.ch/repo/sw/python/latest/setup.sh
-    if [ -f $PYTHON26 ] ; then
-      if [ ! -z $PYTHONPATH ]; then
-        echo "Clobbering PYTHONPATH. Needed to deal with tarball sites when using python2.6"
-        unset PYTHONPATH
-      fi
-      echo "sourcing cvmfs python2.6 setup: $PYTHON26"
-      source $PYTHON26
-      echo current PYTHONPATH=$PYTHONPATH
-      pybin=`which python`
-      lfc_test $pybin
-      if [ $? = "0" ]; then
-        log "warning: this site using cvmfs python $pybin"
-        err "warning: this site using cvmfs python $pybin"
-        return 0
-      fi
-    else
-      log "cvmfs python2.6 not found"
-      err "not found: $PYTHON26"
+      # Oh dear, we're doomed...
+      log "ERROR: Failed to find an compatible python, exiting"
+      err "ERROR: Failed to find an compatible python, exiting"
+      monfault 1
+      exit 1
     fi
-
-    # On many sites python now works just fine (m/w also now
-    # distributes the LFC plugin in 64 bit)
-    pybin=python
-    lfc_test $pybin
-    if [ $? = "0" ]; then
-        log "refactor: this site using default python $pybin"
-        err "refactor: this site using default python $pybin"
-        return 0
-    fi
-
-    # Now see if python32 exists
-    pybin=python32
-    lfc_test $pybin
-    if [ $? == "0" ]; then
-        log "warning: this site using python32 $pybin"
-        err "warning: this site using python32 $pybin"
-        return 0
-    fi
-
-    # Oh dear, we're doomed...
-    log "ERROR: Failed to find an LFC compatible python, exiting"
-    err "ERROR: Failed to find an LFC compatible python, exiting"
-    monfault 1
-    exit 1
 }
 
 function get_pilot() {
@@ -323,17 +256,10 @@ function main() {
   # the panda servers
   unset https_proxy HTTPS_PROXY
   
-  # refactor
-  # Set LFC api timeouts
-  export LFC_CONNTIMEOUT=60
-  export LFC_CONRETRY=2
-  export LFC_CONRETRYINT=60
-  
-  # refactor
-  # Find the best python to run with
-  echo "---- Searching for LFC compatible python ----"
-  find_lfc_compatible_python
-  echo "Using $pybin for python LFC compatibility"
+  # Check python version to run with
+  echo "---- Searching for compatible python ----"
+  find_compatible_python
+  echo "Using $pybin for python compatibility"
   echo
   
   # OSG or EGEE?
