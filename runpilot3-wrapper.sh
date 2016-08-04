@@ -80,7 +80,7 @@ function get_pilot() {
 
 function monrunning() {
   if [ -z ${APFMON:-} ]; then
-    err 'wrapper monitoring not configured'
+    err "wrapper monitoring not configured"
     return
   fi
 
@@ -97,7 +97,7 @@ function monrunning() {
 
 function monexiting() {
   if [ -z ${APFMON:-} ]; then
-    err 'wrapper monitoring not configured'
+    err "wrapper monitoring not configured"
     return
   fi
 
@@ -112,7 +112,7 @@ function monexiting() {
 
 function monfault() {
   if [ -z ${APFMON:-} ]; then
-    err 'wrapper monitoring not configured'
+    err "wrapper monitoring not configured"
     return
   fi
 
