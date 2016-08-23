@@ -10,7 +10,7 @@ from urllib import urlopen
 import sys
 import json
 
-VERSION=20160801
+VERSION=20160823
 
 defaultsection = """\
 
@@ -147,6 +147,7 @@ specified cloud and activity type.
             maxtime = d[key]['maxtime']
             maxmemory = d[key]['maxmemory']
             corecount = d[key]['corecount']
+            if not corecount: corecount = 1
             ismcore = corecount > 1
             maxrss = d[key].get('maxrss', 0)
             maxswap = d[key].get('maxswap', 0)
