@@ -26,8 +26,8 @@ while read -r line ; do
   if echo $line | grep --quiet 'Warning: Bad history file'; then
     continue
   fi
-  jobid=$(echo $line | awk '{print $1}')
-  jobstate=$(echo $line | awk '{print $2}')
+  jobid=$(echo $line | cut -d'#' -f 2)
+  jobstate=$(echo $line | cut -d' ' -f 2)
   jid=$factory:$jobid
   if [ "$jobstate" -eq "3" ]; then
     state="fault"
@@ -40,9 +40,6 @@ while read -r line ; do
   echo $jid $state
   counter=$((counter+1))
 
-done < <(condor_history -file $1 -match $N -const "EnteredCurrentStatus>=$since" \
--format '%4d' ClusterId \
--format '.%-3d ' ProcId \
--format '%d\n' JobStatus)
+done < <(condor_history -file $1 -match $N -const "EnteredCurrentStatus>=$since" -af GlobalJobId JobStatus)
 
 echo Processed $counter jobs.
