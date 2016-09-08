@@ -271,7 +271,7 @@ specified cloud and activity type.
                         print 'batchsubmit.condorosgce.condor_attributes.+maxMemory = %d' % maxmemory
                     print 'batchsubmit.condorosgce.condor_attributes.+xcount = %d' % corecount
                     if q['ce_queue_name']:
-                        print 'batchsubmit.condorosgce.condor_attributes.+remote_queue = %s' % q['ce_queue_name']
+                        print 'batchsubmit.condorosgce.condor_attributes.+remote_queue = "%s"' % q['ce_queue_name']
                 if options.activity == 'analysis':
                     if ismcore:
                         print 'batchsubmit.%s.proxy = atlas-analy-mcore' % submitpluginstring
