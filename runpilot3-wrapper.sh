@@ -3,7 +3,7 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20160803
+VERSION=20160910
 
 function err() {
   date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@" >&2
@@ -296,7 +296,7 @@ function main() {
   echo "---- DDM setup ----"
   if [ -f /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh ]; then
     echo "Sourcing /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh"
-    export RUCIO_HOME=/cvmfs/atlas.cern.ch/repo/sw/ddm/rucio-clients/1.4.6
+    export RUCIO_HOME=/cvmfs/atlas.cern.ch/repo/sw/ddm/rucio-clients/latest
     source /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh
   elif [ -f $ATLAS_AREA/ddm/latest/setup.sh ]; then
     echo "Sourcing $ATLAS_AREA/ddm/latest/setup.sh"
