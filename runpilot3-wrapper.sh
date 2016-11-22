@@ -3,7 +3,7 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20160910
+VERSION=20161121
 
 function err() {
   date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@" >&2
@@ -338,6 +338,20 @@ function main() {
   fi
   echo
   
+  echo "---- Davix setup ----"
+  ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase
+  source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh -q
+  source $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh davix -q
+  out=$(davix-http --version)
+  if [[ "$?" -eq 0 ]]; then
+    log $out
+  else
+    err "davix-http not available, exiting"
+    monfault 1
+    exit 1
+  fi
+  
+
   # This is where the pilot rundirectory is - maybe left after job finishes
   scratch=$(pwd)
   
