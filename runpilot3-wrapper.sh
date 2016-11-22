@@ -340,7 +340,6 @@ function main() {
   
   echo "---- Davix setup ----"
   ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase
-  log "ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase"
   source $ATLAS_LOCAL_ROOT_BASE/user/atlasLocalSetup.sh -q
   log "Sourcing $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh davix -q"
   source $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh davix -q
