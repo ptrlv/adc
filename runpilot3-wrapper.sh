@@ -340,16 +340,19 @@ function main() {
   
   echo "---- Davix setup ----"
   ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase
+  log "ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase"
   source $ATLAS_LOCAL_ROOT_BASE/user/atlasLocalSetup.sh -q
+  log "Sourcing $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh davix -q"
   source $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh davix -q
   out=$(davix-http --version)
   if [[ "$?" -eq 0 ]]; then
-    log $out
+    log "$out"
   else
     err "davix-http not available, exiting"
     monfault 1
     exit 1
   fi
+  echo
   
 
   # This is where the pilot rundirectory is - maybe left after job finishes
