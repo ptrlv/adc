@@ -2,7 +2,7 @@
 
 shopt -s nullglob
 
-for f in /var/lib/condor/spool/history.*; do
+for f in /var/lib/condor/spool/history.2016*; do
   bn=$(basename $f)
   p=${bn/history/parsed}
   fullp=/data/plove/$p
