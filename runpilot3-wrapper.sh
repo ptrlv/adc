@@ -3,7 +3,7 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20161121
+VERSION=20161123
 
 function err() {
   date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@" >&2
@@ -181,7 +181,8 @@ function main() {
   echo "This is ATLAS pilot wrapper version: $VERSION"
   echo "Please send development requests to p.love@lancaster.ac.uk"
   
-  log "==== wrapper output BEGIN ===="
+  log "==== wrapper stdout BEGIN ===="
+  err "==== wrapper stderr BEGIN ===="
   # notify monitoring, job running
   monrunning
 
@@ -397,6 +398,7 @@ function main() {
   rm -fr $temp
   
   log "==== wrapper stdout END ===="
+  err "==== wrapper stderr END ===="
   exit
 }
 
