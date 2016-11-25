@@ -205,10 +205,7 @@ function main() {
   
   # If we have TMPDIR defined, then move into this directory
   # If it's not defined, then stay where we are
-  # to be refactored away, always use pwd
   if [ -n "$TMPDIR" ]; then
-    err "refactor: this site uses TMPDIR: $TMPDIR"
-    err "refactor: this site startdir: $startdir"
     log "cd \$TMPDIR: $TMPDIR"
     cd $TMPDIR
   fi
