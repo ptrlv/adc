@@ -3,14 +3,16 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20161123
+VERSION=20161128
 
 function err() {
-  date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@" >&2
+  dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
+  echo $dt $@ >&2
 }
 
 function log() {
-  date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper] $@"
+  dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
+  echo $dt $@
 }
 
 function find_compatible_python() {
@@ -277,7 +279,6 @@ function main() {
     err "ERROR: Failed to find VO_ATLAS_SW_DIR or OSG_APP. This is a bad site, exiting."
     monfault 1
     exit 1
-    ATLAS_AREA=/bad_site
   fi
   
   ls -l $ATLAS_AREA/
