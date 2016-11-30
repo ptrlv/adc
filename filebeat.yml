@@ -1,0 +1,20 @@
+filebeat:
+  prospectors:
+    -
+      paths:
+        - "/data/plove/parsed.201611*"
+      document_type: condor-parsed
+      multiline:
+        pattern: '^$'
+        negate: true
+        match: after
+
+
+output.logstash:
+  hosts: ["aiatlas013.cern.ch:5044"]
+
+output.console:
+  pretty: true
+
+logging:
+  to_files: false
