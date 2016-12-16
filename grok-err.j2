@@ -1,0 +1,173 @@
+#!/bin/gawk -f
+
+# process htcondor RemoveReason and update apfmon
+# 
+# condor_history -file /var/lib/condor/spool/history -const "EnteredCurrentStatus>=$since && JobStatus==3" -af MATCH_APF_QUEUE RemoveReason
+# $1 MATCH_APF_QUEUE
+# $2- RemoveReason
+
+BEGIN {
+  factory = "{{ factoryid }}"
+}
+
+match($0, /(CREAM_Delegate Error: .+)/, arr) {
+  errors[$1,"CREAM_DELEGATE"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(CREAM_Job_Register Error: .+)/, arr) {
+  errors[$1,"CREAM_JOB_REGISTER"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(CREAM error: CREAM_JOB_REGISTER timed out)/, arr) {
+  errors[$1,"CREAM_TIMEOUT"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(CREAM error: CREAM_JOB_START timed out)/, arr) {
+  errors[$1,"CREAM_TIMEOUT"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(CREAM error: CREAM_JOB_CANCEL timed out)/, arr) {
+  errors[$1,"CREAM_TIMEOUT"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(CREAM error: CREAM_Job_Start)/, arr) {
+  errors[$1,"CREAM_START"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(CREAM error: CREAM_Job_Cancel)/, arr) {
+  errors[$1,"CREAM_CANCEL"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(CREAM_DELEGATE timed out)/, arr) {
+  errors[$1,"CREAM_TIMEOUT"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(CREAM error: Transfer failed: .+)/, arr) {
+  errors[$1,"CREAM_TRANSFER"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(CREAM error: getBlahOutput)/, arr) {
+  errors[$1,"CREAM_BLAH"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(CREAM error: BLAH error: .+)/, arr) {
+  errors[$1,"CREAM_BLAH"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(CREAM error: CREAM_Job_Status)/, arr) {
+  errors[$1,"CREAM_STATUS"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(CREAM error: CREAM_Job_Purge)/, arr) {
+  errors[$1,"CREAM_PURGE"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(The job attribute PeriodicHold expression .+)/, arr) {
+  errors[$1,"PERIODIC_HOLD"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(The job attribute PeriodicRemove expression .+)/, arr) {
+  errors[$1,"PERIODIC_REMOVE"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(NORDUGRID_CANCEL timed out)/, arr) {
+  errors[$1,"NORDUGRID_TIMEOUT"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(NORDUGRID_SUBMIT timed out)/, arr) {
+  errors[$1,"NORDUGRID_TIMEOUT"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(globus_xio: System error in send: Broken pipe globus_xio: A system call failed: Broken pipe)/, arr) {
+  errors[$1,"GLOBUS_XIO"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(an end-of-file was reached globus_xio: An end of file occurred)/, arr) {
+  errors[$1,"GLOBUS_XIO"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(globus_ftp_client:)/, arr) {
+  errors[$1,"GLOBUS_FTP"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(Unspecified gridmanager error)/, arr) {
+  errors[$1,"UNSPECIFIED_GRIDMANAGER"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(undefined)/, arr) {
+  errors[$1,"OK"]++
+  full[$1] = arr[1]
+  next
+}
+
+{
+  errors[$1,"UNKNOWN_ERROR"]++
+  print "UNKNOWN", $0
+}
+
+END{
+#for (j in full) {
+#  print "FULL"
+#  print j, full[j] 
+#}
+#for (j in brief) {
+#  print j, brief[j]
+#}
+for (combined in errors) {
+  split(combined, sep, SUBSEP)
+  totals[sep[2]] += errors[combined]
+  lid = factory ":" sep[1]
+  fmt = "curl --silent -d error=%s -d count=%s http://apfmon.lancs.ac.uk/api/label/%s \n"
+  cmd = "curl --silent -d error="sep[2]" -d count="errors[combined]" http://apfmon.lancs.ac.uk/api/labels/"lid
+  print cmd
+#  cmd = printf fmt, sep[2], errors[combined], lid
+#  system(cmd)
+}
+print
+print "TOTALS"
+for (err in totals) {
+  print err, totals[err]
+}
+}

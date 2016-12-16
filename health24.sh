@@ -21,6 +21,7 @@ function age() {
 }
 
 tmpfile=$(mktemp /var/log/autopyfactory/health.XXXXX)
+factoryid=$(awk '/factoryId/ {print $3}' /etc/autopyfactory/autopyfactory.conf)
 
 # Test 1
 # check apf.log has recently being written to
@@ -42,12 +43,10 @@ elif [[ $apflogage -lt 1800 ]]; then
   msg='No activity seen for 30 minutes in apf.log'
 fi
 
-
-
 # Test 2
 # 'condor_q | tail -1' example output:
 # 8848 jobs; 10 completed, 0 removed, 1662 idle, 7176 running, 0 held, 0 suspended
-summary=$(condor_q | tail -1)
+summary=$(condor_q | tail -1 | tr ';' ',')
 
 total=$(echo $summary | cut -d' ' -f1)
 completed=$(echo $summary | cut -d' ' -f3)
@@ -65,8 +64,13 @@ running=$(echo $summary | cut -d' ' -f9)
 #  msg='Number of removed jobs too high (>5000)'
 #fi
 
+echo $summary | grep jobs &> /dev/null
+if [[ $? -eq 0 ]]; then
+  curl -s -d status="$summary" http://apfmon.lancs.ac.uk/api/factories/$factoryid
+fi
+
 # Test 3
-logfile=/var/log/condor/GridmanagerLog.apf
+logfile=/var/log/condor/GridmanagerLog.autopyfactory
 shortname=$(hostname -s)
 timestamp=$(date +%Y-%m-%dT%H:%M:%S)
 gridage=$(age "$logfile")
@@ -108,7 +112,7 @@ if ! curl -i -s -F file=@$tmpfile xsls.cern.ch >/dev/null ; then
   exit 1
 fi
 
-# remove files older than 2880 minutes (48 hours)
+# remove files older than 1440 minutes (24 hours)
 find /var/log/autopyfactory/ -type f -name health.* -mmin +1440 -delete
 
 # check validity
