@@ -124,7 +124,7 @@ specified cloud and activity type.
                 if q['ce_queue_status'] not in ["", 'production', 'Production']:
                     print
                     print "# Warning, not 'Production': %s/%s (ce_queue_status = %s)" % (key, q['ce_name'], q['ce_queue_status'])
-#                    continue
+                    continue
                 gramqueue = None 
                 nordugridrsl = None 
                 submitplugin = None
