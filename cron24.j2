@@ -6,3 +6,4 @@ MAILTO=peter.love@cern.ch
 */5 * * * * root /usr/local/bin/transition.sh /var/lib/condor/spool/history > /var/log/autopyfactory/trans.log
 # Publish health stats for kibana and apfmon
 */2 * * * * root /usr/local/bin/health.sh >/dev/null 2>&1
+*/15 * * * * root /usr/local/bin/errors.sh >/dev/null 2>&1

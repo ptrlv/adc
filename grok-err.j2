@@ -161,13 +161,11 @@ for (combined in errors) {
   lid = factory ":" sep[1]
   fmt = "curl --silent -d error=%s -d count=%s http://apfmon.lancs.ac.uk/api/label/%s \n"
   cmd = "curl --silent -d error="sep[2]" -d count="errors[combined]" http://apfmon.lancs.ac.uk/api/labels/"lid
-  print cmd
-#  cmd = printf fmt, sep[2], errors[combined], lid
-#  system(cmd)
+  system(cmd)
 }
-print
-print "TOTALS"
-for (err in totals) {
-  print err, totals[err]
-}
+#print
+#print "FACTORY TOTALS"
+#for (err in totals) {
+#  print err, totals[err]
+#}
 }
