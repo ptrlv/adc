@@ -3,7 +3,8 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20161130
+VERSION=20170228-toa
+
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -17,13 +18,6 @@ function log() {
 
 function find_compatible_python() {
     ## Try to figure out what python to run
-
-    # We _do_not_ now try to use python from the ATLAS release
-    # as at this point we do not know what version of python to
-    # use or what architecture. Therefore the strategy now is to
-    # use the site environment in which to run the pilot and
-    # let the pilot setup the correct ATLAS environment for the
-    # job.
 
     pybin=`which python`
     pyver=`$pybin -c "import sys; print '%03d%03d%03d' % sys.version_info[0:3]"`
@@ -320,22 +314,22 @@ function main() {
   fi
   echo
 
-  echo "---- Prepare DDM ToACache ----"
-  echo "Looking for $ATLAS_AREA/local/etc/ToACache.py"
-  TOACACHE="$ATLAS_AREA/local/etc/ToACache.py"
-  TOALCACHE="/var/tmp/.dq2$(whoami)/ToACache.py"
-  if [ -s "$TOACACHE" ] ; then
-    if [ -L "$TOALCACHE" ] ; then
-      log "Link to $TOALCACHE already in place, touching it to extend the vaildity"
-      touch -h $TOALCACHE
-    else
-      log "Linking $TOACACHE to $TOALCACHE"
-      rm -f $TOALCACHE && ln -s $TOACACHE $TOALCACHE
-    fi
-  else
-    log "Local $TOACACHE not found (or zero size), continuing"
-  fi
-  echo
+#  echo "---- Prepare DDM ToACache ----"
+#  echo "Looking for $ATLAS_AREA/local/etc/ToACache.py"
+#  TOACACHE="$ATLAS_AREA/local/etc/ToACache.py"
+#  TOALCACHE="/var/tmp/.dq2$(whoami)/ToACache.py"
+#  if [ -s "$TOACACHE" ] ; then
+#    if [ -L "$TOALCACHE" ] ; then
+#      log "Link to $TOALCACHE already in place, touching it to extend the vaildity"
+#      touch -h $TOALCACHE
+#    else
+#      log "Linking $TOACACHE to $TOALCACHE"
+#      rm -f $TOALCACHE && ln -s $TOACACHE $TOALCACHE
+#    fi
+#  else
+#    log "Local $TOACACHE not found (or zero size), continuing"
+#  fi
+#  echo
   
   echo "---- Davix setup ----"
   ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase
