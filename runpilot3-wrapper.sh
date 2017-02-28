@@ -3,8 +3,7 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20170228-toa
-
+VERSION=20170228
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
