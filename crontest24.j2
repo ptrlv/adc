@@ -1,5 +1,7 @@
 MAILTO=peter.love@cern.ch
 # refresh config from AGIS and restart factory
+15,45 * * * * root /usr/local/bin/all-agis.sh {{ clouds }} > /var/log/autopyfactory/all-agis.log
+0,30 * * * * root /sbin/service autopyfactory restart >/dev/null
 # apfmon move between states quicker
 */5 * * * * root /usr/local/bin/transition.sh /var/lib/condor/spool/history > /var/log/autopyfactory/trans.log
 # generate and push XML to SLSmon service
