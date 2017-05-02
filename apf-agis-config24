@@ -10,7 +10,7 @@ from urllib import urlopen
 import sys
 import json
 
-VERSION=20170222
+VERSION=20170502
 
 def main():
 
