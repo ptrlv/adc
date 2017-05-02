@@ -18,6 +18,12 @@ def main():
 Output a factory queue configuration using ACTIVE sites from the
 specified cloud and activity type.
 ''')
+    parser.add_option("-s",
+                       dest="site",
+                       action="store",
+                       default='ALL',
+                       type="string",
+                       help="name of site")
     parser.add_option("-c",
                        dest="cloud",
                        action="store",
@@ -64,6 +70,12 @@ specified cloud and activity type.
         url += '&cloud=%s' % options.cloud.upper()
     logging.info(url)
 
+    badset = set()
+    try:
+        badset = set(line.strip() for line in open('/tmp/apf-badness.txt'))
+    except:
+        pass
+
     handle = urlopen(url)
     d = json.load(handle, 'utf-8')
     handle.close()
@@ -73,6 +85,8 @@ specified cloud and activity type.
 
     # loop through PandaQueues
     for key in sorted(d):
+        if options.site != 'ALL' and d[key]['site'] not in options.site.split(','):
+            continue
         try:
             if options.activity == 'ptest':
                 if not d[key]['ptest']:
@@ -113,18 +127,22 @@ specified cloud and activity type.
             pilot_version = d[key].get('pilot_version', 'current')
             
             for q in d[key]['queues']:
+                label = '%s-%s' % (d[key]['nickname'], q['ce_queue_id'])
                 if q['ce_state'] != 'ACTIVE':
                     print
                     print "# Excluded, not 'ACTIVE': %s/%s (ce_state = %s)" % (key, q['ce_name'], q['ce_state'])
                     continue
-                if q['ce_status'] not in ['production', 'Production']:
+                if q['ce_status'] in ['maintenance']:
                     print
-                    print "# Warning, not 'production': %s/%s (ce_status = %s)" % (key, q['ce_name'], q['ce_status'])
-#                    continue
-                if q['ce_queue_status'] not in ["", 'production', 'Production']:
-                    print
-                    print "# Warning, not 'Production': %s/%s (ce_queue_status = %s)" % (key, q['ce_name'], q['ce_queue_status'])
+                    print "# Warning, in 'maintenance': %s/%s (ce_status = %s)" % (key, q['ce_name'], q['ce_status'])
                     continue
+                # ce_queue_status now ignored
+                if label in badset:
+                    print
+                    print "# Warning, queue %s found in /tmp/apf-badness.txt" % label
+                    continue
+                
+
                 gramqueue = None 
                 nordugridrsl = None 
                 submitplugin = None
@@ -272,6 +290,9 @@ specified cloud and activity type.
                     print 'batchsubmit.condorosgce.condor_attributes.+xcount = %d' % corecount
                     if q['ce_queue_name']:
                         print 'batchsubmit.condorosgce.condor_attributes.+remote_queue = "%s"' % q['ce_queue_name']
+                if d[key]['cloud'] == 'US':
+                    print 'batchsubmit.%s.proxy = atlas-usatlas' % submitpluginstring
+                    continue
                 if options.activity == 'analysis':
                     if ismcore:
                         print 'batchsubmit.%s.proxy = atlas-analy-mcore' % submitpluginstring
