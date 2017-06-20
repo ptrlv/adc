@@ -2,19 +2,20 @@ filebeat:
   prospectors:
     -
       paths:
-        - "/data/plove/parsed.201611*"
-      document_type: condor-parsed
-      multiline:
-        pattern: '^$'
-        negate: true
-        match: after
+        - "/var/lib/condor/spool/history"
+#        - "/afs/cern.ch/user/p/plove/ops/adc/sample.history"
+      document_type: condor-history
+#      multiline:
+#        pattern: '\*\*\* Offset.*$'
+#        negate: false
+#        match: after
 
+output:
+  logstash:
+    hosts: ["aiatlas013.cern.ch:5044"]
 
-output.logstash:
-  hosts: ["aiatlas013.cern.ch:5044"]
-
-output.console:
-  pretty: true
+#  console:
+#    pretty: true
 
 logging:
   to_files: false
