@@ -1,0 +1,5 @@
+MAILTO=peter.love@cern.ch
+# apfmon move between states quicker
+*/5 * * * * root /usr/local/bin/transition.sh /var/lib/condor/spool/history > /var/log/autopyfactory/trans.log
+# generate and push XML to SLSmon service
+*/2 * * * * root /usr/local/bin/health.sh >/dev/null 2>&1
