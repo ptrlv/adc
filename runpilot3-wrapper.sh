@@ -2,8 +2,10 @@
 #
 # pilot wrapper used at CERN central pilot factories
 #
+# https://google.github.io/styleguide/shell.xml
 
-VERSION=20171006
+
+VERSION=20171006-rc
 # oct 6th - many changes
 
 function err() {
@@ -71,12 +73,106 @@ function check_tags() {
   echo
 }
 
+function setup_alrb() {
+  if [ -d /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase ]; then
+    export ATLAS_LOCAL_ROOT_BASE='/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase'
+    source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh --quiet
+  else
+    log "ERROR: ALRB not found: /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase, exiting"
+    err "ERROR: ALRB not found: /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase, exiting"
+    monfault 1
+    exit 1
+  fi
+}
+
+function setup_ddm() {
+  if [[ ${PILOT_TYPE} = "RC" ]]; then
+    echo "Running: lsetup rucio testing"
+    lsetup rucio testing
+    if [[ "$?" -ne 0 ]]; then
+      log 'FATAL: error running "lsetup rucio testing", exiting.'
+      err 'FATAL: error running "lsetup rucio testing", exiting.'
+      monfault 1
+      exit 1
+    fi
+  else
+    echo "Running: lsetup rucio"
+    lsetup rucio
+    if [[ "$?" -ne 0 ]]; then
+      log 'FATAL: error running "lsetup rucio", exiting.'
+      err 'FATAL: error running "lsetup rucio", exiting.'
+      monfault 1
+      exit 1
+    fi
+  fi
+
+}
+
+# still needed? using VO_ATLAS_SW_DIR is specific to EGI
+function setup_local() {
+  echo "Looking for ${VO_ATLAS_SW_DIR}/local/setup.sh"
+  if [[ -f ${VO_ATLAS_SW_DIR}/local/setup.sh ]]; then
+    echo "Sourcing ${VO_ATLAS_SW_DIR}/local/setup.sh -s $sflag"
+    source ${VO_ATLAS_SW_DIR}/local/setup.sh -s $sflag
+  else
+    log 'WARNING: No ATLAS local setup found'
+    err 'WARNING: this site has no local setup ${VO_ATLAS_SW_DIR}/local/setup.sh'
+  fi
+}
+
+function setup_davix() {
+  log "Sourcing $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh davix -q"
+  source $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh davix -q
+  out=$(davix-http --version)
+  if [[ "$?" -eq 0 ]]; then
+    log "$out"
+  else
+    err "davix-http not available, exiting"
+    monfault 1
+    exit 1
+  fi
+}
+
+function check_singularity() {
+  singbin=$(which singulartiy 2> /dev/null)
+  if [ -n ${singbin} ]; then
+    ver=$(singularity --version)
+    log "Singularity binary found: $singbin $ver"
+  else
+    log "Singularity binary not found"
+  fi
+}
+
+function get_singopts() {
+  url="http://pandaserver.cern.ch:25085/cache/schedconfig/$sflag.all.json"
+  singopts=$(curl --silent $url | awk -F"'" '/singularity_options/ {print $2}')
+  if [[ "$?" -eq 0 ]]; then
+    log "singularity_options found: $singopts"
+    echo $singopts
+  else
+    err "singularity_options not found"
+  fi
+  
+}
+
+function pilot_cmd() {
+  if [[ -n "$PILOT_TYPE" ]]; then
+    pilot_args="-d $temp $myargs -i $PILOT_TYPE -G 1"
+  else
+    pilot_args="-d $temp $myargs -G 1"
+  fi
+
+  if [[ ${use_singularity} = true ]]; then
+    cmd="$singbin exec $singopts /cvmfs/atlas.cern.ch/repo/images/singularity/x86_64-slc6.img python pilot.py $pilot_args"
+  else
+    cmd="$pybin pilot.py $pilot_args"
+  fi
+  echo ${cmd}
+}
+
 function get_pilot() {
   # N.B. an RC pilot is chosen once every 100 downloads for production and
   # ptest jobs use Paul's development release.
-
-  mkdir pilot3
-  cd pilot3
 
   if [ -v ${PILOT_HTTP_SOURCES} ]; then
     if echo $myargs | grep -- "-u ptest" > /dev/null; then 
@@ -198,14 +294,8 @@ function bus_handler() {
 
 function main() {
   #
-  # Fail early with useful diagnostics
+  # Fail early, fail often^H with useful diagnostics
   #
-  # CHANGELOG:
-  # refactor and code cleanup
-  # added datetime to stdout/err
-  # ignore TMPDIR, just run in landing directory
-  # removed function set_limits, now done in pilot
-  # 
   
   echo "This is ATLAS pilot wrapper version: $VERSION"
   echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -224,7 +314,6 @@ function main() {
   if [[ -r /proc/version ]]; then
     echo "/proc/version:" $(cat /proc/version)
   fi
-  startdir=$(pwd)
   myargs=$@
   echo "cmd: $0 $myargs"
   log "wrapper getopts: -h $hflag -p $pflag -s $sflag -u $uflag -w $wflag"
@@ -283,90 +372,49 @@ function main() {
   check_tags
   echo
   
-  echo "---- DDM setup ----"
+  echo "---- Setup ALRB ----"
+  setup_alrb
+  echo
+
+  echo "---- Setup DDM ----"
   setup_ddm
   echo
 
-function setup_ddm() {
-  if [ -f /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh ]; then
-    echo "Sourcing /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh"
-    export RUCIO_HOME=/cvmfs/atlas.cern.ch/repo/sw/ddm/rucio-clients/latest
-    source /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh
-  elif [ -f $ATLAS_AREA/ddm/latest/setup.sh ]; then
-    echo "Sourcing $ATLAS_AREA/ddm/latest/setup.sh"
-    err "refactor: sourcing $ATLAS_AREA/ddm/latest/setup.sh"
-    source $ATLAS_AREA/ddm/latest/setup.sh
-  else
-    log "WARNING: No DDM setup found to source, exiting."
-    err "WARNING: No DDM setup found to source, exiting."
-    monfault 1
-    exit 1
-  fi
-}
-  
-  echo "---- Local ATLAS setup ----"
-  echo "Looking for $ATLAS_AREA/local/setup.sh"
-  if [ -f $ATLAS_AREA/local/setup.sh ]; then
-      echo "Sourcing $ATLAS_AREA/local/setup.sh -s $sflag"
-#      source $ATLAS_AREA/local/setup.sh -s $sflag
-  else
-      log "WARNING: No ATLAS local setup found"
-      err "refactor: this site has no local setup $ATLAS_AREA/local/setup.sh"
-  fi
+  echo "---- Setup local ATLAS ----"
+  setup_local
   echo
 
   echo "---- Davix setup ----"
-  ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase
-  source $ATLAS_LOCAL_ROOT_BASE/user/atlasLocalSetup.sh -q
-  log "Sourcing $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh davix -q"
-#  source $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh davix -q
-  out=$(davix-http --version)
-  if [[ "$?" -eq 0 ]]; then
-    log "$out"
-  else
-    err "davix-http not available, exiting"
-    monfault 1
-    exit 1
-  fi
+  setup_davix
   echo
-  
+
   echo "---- Check singularity binary ----"
-  singbin=$(which singulartiy 2> /dev/null)
-  if [ -n ${singbin} ]; then
-    ver=$(singularity --version)
-    log "Singularity binary found: $singbin $ver"
+  check_singularity
+  echo
+
+  echo "---- Get singularity options ----"
+  sing_opts=$(get_singopts)
+  echo $sing_opts
+  echo
+
+  echo "---- Check whether or not to use singularity ----"
+  use_singularity=false  # hardcoded for now
+  if [[ ${use_singularity} = true ]]; then
+    log 'Will use singularity'
+    echo '   _____ _                   __           _ __        '
+    echo '  / ___/(_)___  ____ ___  __/ /___ ______(_) /___  __ '
+    echo '  \__ \/ / __ \/ __ `/ / / / / __ `/ ___/ / __/ / / / '
+    echo ' ___/ / / / / / /_/ / /_/ / / /_/ / /  / / /_/ /_/ /  '
+    echo '/____/_/_/ /_/\__, /\__,_/_/\__,_/_/  /_/\__/\__, /   '
+    echo '             /____/                         /____/    '
+    echo
   else
-    log "Singularity binary not found"
+    log 'Will NOT use singularity'
   fi
 
-  if [ -n ${singbin} ]; then
-    echo "---- Get singularity_options ----"
-    url="http://pandaserver.cern.ch:25085/cache/schedconfig/$sflag.all.json"
-    singopts=$(curl $url | awk -F"'" '/singularity_options/ {print $2}')
-    if [[ "$?" -eq 0 ]]; then
-      log "singularity_options found: $singopts"
-    else
-      err "singularity binary not found"
-    fi
-  fi
-  
-  echo "---- Build pilot_args  ----"
-  # If we know the pilot type then set this
-  if [ -n "$PILOT_TYPE" ]; then
-      pilot_args="-d $scratch $myargs -i $PILOT_TYPE -G 1"
-  else
-      pilot_args="-d $scratch $myargs -G 1"
-  fi
-  
   echo "---- Build pilot cmd ----"
-  # want singularity?
-  if [ -n ${singopts} ]; then
-    cmd="$singbin exec /cvmfs/atlas.cern.ch/repo/images/singularity/x86_64-slc6.img $pybin pilot.py $pilot_args"
-  else
-    cmd="$pybin pilot.py $pilot_args"
-  fi
-
-  echo cmd: $cmd
+  cmd=$(pilot_cmd)
+  echo cmd: ${cmd}
 
   echo "---- Ready to run pilot ----"
   trap term_handler SIGTERM
@@ -375,9 +423,10 @@ function setup_ddm() {
   trap xcpu_handler SIGXCPU
   trap usr1_handler SIGUSR1
   trap bus_handler SIGBUS
+  cd $temp/pilot3
+  log "cd $temp/pilot3"
 
   log "==== pilot stdout BEGIN ===="
-  scratch=$(pwd)
   # PAL $cmd &
   exit 1 # PAL
   pilotpid=$!
