@@ -6,7 +6,9 @@
 
 
 VERSION=20171006-rc
-# oct 6th - many changes
+echo VERSION=${VERSION}
+echo 'This version should not be used yet, exiting'
+exit 1
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
