@@ -3,7 +3,8 @@
 # pilot wrapper used at CERN central pilot factories
 #
 
-VERSION=20170228
+VERSION=20171006
+# oct 6th - many changes
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -15,37 +16,69 @@ function log() {
   echo $dt $@
 }
 
-function find_compatible_python() {
-    ## Try to figure out what python to run
-
-    pybin=`which python`
+function check_python() {
+    pybin=$(which python)
     pyver=`$pybin -c "import sys; print '%03d%03d%03d' % sys.version_info[0:3]"`
     # check if native python version > 2.6.0
     if [ $pyver -ge 002006000 ] ; then
       log "Native python version is > 2.6.0 ($pyver)"
+      log "Using $pybin for python compatibility"
     else
       log "refactor: this site has native python < 2.6.0"
       err "warning: this site has native python < 2.6.0"
       log "Native python $pybin is old: $pyver"
     
       # Oh dear, we're doomed...
-      log "ERROR: Failed to find an compatible python, exiting"
-      err "ERROR: Failed to find an compatible python, exiting"
+      log "FATAL: Failed to find a compatible python, exiting"
+      err "FATAL: Failed to find a compatible python, exiting"
       monfault 1
       exit 1
     fi
 }
 
+function check_proxy() {
+  voms-proxy-info -all
+  if [[ "$?" -ne 0 ]]; then
+    log "FATAL: error running: voms-proxy-info -all"
+    err "FATAL: error running: voms-proxy-info -all"
+    monfault exiting 1
+    exit 1
+  fi
+}
+
+function check_cvmfs() {
+  if [ -d /cvmfs/atlas.cern.ch/repo/sw ]; then
+    log "Found atlas cvmfs software repository"
+  else
+    log "ERROR: /cvmfs/atlas.cern.ch/repo/sw not found"
+    log "FATAL: Failed to find atlas cvmfs software repository. This is a bad site, exiting."
+    err "FATAL: Failed to find atlas cvmfs software repository. This is a bad site, exiting."
+    monfault 1
+    exit 1
+  fi
+}
+  
+function check_tags() {
+  if [ -e /cvmfs/atlas.cern.ch/repo/sw/tags ]; then
+    echo "sha256sum /cvmfs/atlas.cern.ch/repo/sw/tags"
+    sha256sum /cvmfs/atlas.cern.ch/repo/sw/tags
+  else
+    log "ERROR: tags file does not exist: /cvmfs/atlas.cern.ch/repo/sw/tags, exiting."
+    err "ERROR: tags file does not exist: /cvmfs/atlas.cern.ch/repo/sw/tags, exiting."
+    monfault 1
+    exit 1
+  fi
+  echo
+}
+
 function get_pilot() {
-  # If you define the environment variable PILOT_HTTP_SOURCES then
-  # loop over those servers. Otherwise use CERN.
   # N.B. an RC pilot is chosen once every 100 downloads for production and
   # ptest jobs use Paul's development release.
 
   mkdir pilot3
   cd pilot3
 
-  if [ -z "$PILOT_HTTP_SOURCES" ]; then
+  if [ -v ${PILOT_HTTP_SOURCES} ]; then
     if echo $myargs | grep -- "-u ptest" > /dev/null; then 
       log "This is a ptest pilot. Development pilot will be used"
       PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilotcode-dev.tar.gz"
@@ -61,20 +94,21 @@ function get_pilot() {
     fi
   fi
 
-  for url in $PILOT_HTTP_SOURCES; do
-    curl --connect-timeout 30 --max-time 180 -sS $url | tar -xzf -
-    if [ -f pilot.py ]; then
-      log "Pilot download OK: $url"
+  for url in ${PILOT_HTTP_SOURCES}; do
+    mkdir pilot3
+    curl --connect-timeout 30 --max-time 180 -sS $url | tar -C pilot3 -xzf -
+    if [ -f pilot3/pilot.py ]; then
+      log "Pilot download OK: ${url}"
       return 0
     fi
-    log "ERROR: pilot download failed: $url"
-    err "ERROR: pilot download failed: $url"
+    log "ERROR: pilot download and extraction failed: ${url}"
+    err "ERROR: pilot download and extraction failed: ${url}"
   done
   return 1
 }
 
 function monrunning() {
-  if [ -z ${APFMON:-} ]; then
+  if [ -z ${APFMON} ]; then
     err "wrapper monitoring not configured"
     return
   fi
@@ -91,7 +125,7 @@ function monrunning() {
 }
 
 function monexiting() {
-  if [ -z ${APFMON:-} ]; then
+  if [ -z ${APFMON} ]; then
     err "wrapper monitoring not configured"
     return
   fi
@@ -106,7 +140,7 @@ function monexiting() {
 }
 
 function monfault() {
-  if [ -z ${APFMON:-} ]; then
+  if [ -z ${APFMON} ]; then
     err "wrapper monitoring not configured"
     return
   fi
@@ -216,7 +250,7 @@ function main() {
   log "cd $temp"
   cd $temp
   
-  # Try to get pilot code...
+  echo "---- Retrieve pilot code ----"
   get_pilot
   if [[ "$?" -ne 0 ]]; then
     log "FATAL: failed to retrieve pilot code"
@@ -233,59 +267,27 @@ function main() {
   ulimit -a
   echo
   
+  echo "---- Check python version ----"
+  check_python
+  echo
+
   echo "---- Proxy Information ----"
-  voms-proxy-info -all
-  if [[ "$?" -ne 0 ]]; then
-    log "FATAL: error running: voms-proxy-info -all"
-    err "FATAL: error running: voms-proxy-info -all"
-    monfault exiting 1
-    exit 1
-  fi
+  check_proxy
   echo
   
-  # refactor
-  # Unset https proxy - this is known to be broken 
-  # and is usually unnecessary on the ports used by
-  # the panda servers
-  unset https_proxy HTTPS_PROXY
-  
-  # Check python version to run with
-  echo "---- Searching for compatible python ----"
-  find_compatible_python
-  echo "Using $pybin for python compatibility"
+  echo "---- Check cvmfs area ----"
+  check_cvmfs
+  echo
+
+  echo "---- Check cvmfs freshness ----"
+  check_tags
   echo
   
-  # OSG or EGEE?
-  # refactor, remove or handle OSG
-  echo "---- VO software area ----"
-  if [ -n "$VO_ATLAS_SW_DIR" ]; then
-    echo "Found EGEE flavour site with software directory $VO_ATLAS_SW_DIR"
-    ATLAS_AREA=$VO_ATLAS_SW_DIR
-  elif [ -n "$OSG_APP" ]; then
-    echo "Found OSG flavor site with software directory $OSG_APP/atlas_app/atlas_rel"
-    ATLAS_AREA=$OSG_APP/atlas_app/atlas_rel
-  else
-    log "ERROR: Failed to find VO_ATLAS_SW_DIR or OSG_APP. This is a bad site, exiting."
-    err "ERROR: Failed to find VO_ATLAS_SW_DIR or OSG_APP. This is a bad site, exiting."
-    monfault 1
-    exit 1
-  fi
-  
-  ls -l $ATLAS_AREA/
-  echo
-  if [ -e $ATLAS_AREA/tags ]; then
-    echo "sha256sum $ATLAS_AREA/tags"
-    sha256sum $ATLAS_AREA/tags
-  else
-    err "ERROR: tags file does not exist: $ATLAS_AREA/tags, exiting."
-    log "ERROR: tags file does not exist: $ATLAS_AREA/tags, exiting."
-    monfault 1
-    exit 1
-  fi
-  echo
-  
-  # setup DDM client
   echo "---- DDM setup ----"
+  setup_ddm
+  echo
+
+function setup_ddm() {
   if [ -f /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh ]; then
     echo "Sourcing /cvmfs/atlas.cern.ch/repo/sw/ddm/latest/setup.sh"
     export RUCIO_HOME=/cvmfs/atlas.cern.ch/repo/sw/ddm/rucio-clients/latest
@@ -300,41 +302,24 @@ function main() {
     monfault 1
     exit 1
   fi
-  echo
+}
   
   echo "---- Local ATLAS setup ----"
   echo "Looking for $ATLAS_AREA/local/setup.sh"
   if [ -f $ATLAS_AREA/local/setup.sh ]; then
       echo "Sourcing $ATLAS_AREA/local/setup.sh -s $sflag"
-      source $ATLAS_AREA/local/setup.sh -s $sflag
+#      source $ATLAS_AREA/local/setup.sh -s $sflag
   else
       log "WARNING: No ATLAS local setup found"
       err "refactor: this site has no local setup $ATLAS_AREA/local/setup.sh"
   fi
   echo
 
-#  echo "---- Prepare DDM ToACache ----"
-#  echo "Looking for $ATLAS_AREA/local/etc/ToACache.py"
-#  TOACACHE="$ATLAS_AREA/local/etc/ToACache.py"
-#  TOALCACHE="/var/tmp/.dq2$(whoami)/ToACache.py"
-#  if [ -s "$TOACACHE" ] ; then
-#    if [ -L "$TOALCACHE" ] ; then
-#      log "Link to $TOALCACHE already in place, touching it to extend the vaildity"
-#      touch -h $TOALCACHE
-#    else
-#      log "Linking $TOACACHE to $TOALCACHE"
-#      rm -f $TOALCACHE && ln -s $TOACACHE $TOALCACHE
-#    fi
-#  else
-#    log "Local $TOACACHE not found (or zero size), continuing"
-#  fi
-#  echo
-  
   echo "---- Davix setup ----"
   ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase
   source $ATLAS_LOCAL_ROOT_BASE/user/atlasLocalSetup.sh -q
   log "Sourcing $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh davix -q"
-  source $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh davix -q
+#  source $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh davix -q
   out=$(davix-http --version)
   if [[ "$?" -eq 0 ]]; then
     log "$out"
@@ -345,11 +330,27 @@ function main() {
   fi
   echo
   
+  echo "---- Check singularity binary ----"
+  singbin=$(which singulartiy 2> /dev/null)
+  if [ -n ${singbin} ]; then
+    ver=$(singularity --version)
+    log "Singularity binary found: $singbin $ver"
+  else
+    log "Singularity binary not found"
+  fi
 
-  # This is where the pilot rundirectory is - maybe left after job finishes
-  scratch=$(pwd)
+  if [ -n ${singbin} ]; then
+    echo "---- Get singularity_options ----"
+    url="http://pandaserver.cern.ch:25085/cache/schedconfig/$sflag.all.json"
+    singopts=$(curl $url | awk -F"'" '/singularity_options/ {print $2}')
+    if [[ "$?" -eq 0 ]]; then
+      log "singularity_options found: $singopts"
+    else
+      err "singularity binary not found"
+    fi
+  fi
   
-  echo "---- Ready to run pilot ----"
+  echo "---- Build pilot_args  ----"
   # If we know the pilot type then set this
   if [ -n "$PILOT_TYPE" ]; then
       pilot_args="-d $scratch $myargs -i $PILOT_TYPE -G 1"
@@ -357,16 +358,28 @@ function main() {
       pilot_args="-d $scratch $myargs -G 1"
   fi
   
+  echo "---- Build pilot cmd ----"
+  # want singularity?
+  if [ -n ${singopts} ]; then
+    cmd="$singbin exec /cvmfs/atlas.cern.ch/repo/images/singularity/x86_64-slc6.img $pybin pilot.py $pilot_args"
+  else
+    cmd="$pybin pilot.py $pilot_args"
+  fi
+
+  echo cmd: $cmd
+
+  echo "---- Ready to run pilot ----"
   trap term_handler SIGTERM
   trap quit_handler SIGQUIT
   trap segv_handler SIGSEGV
   trap xcpu_handler SIGXCPU
   trap usr1_handler SIGUSR1
   trap bus_handler SIGBUS
-  cmd="$pybin pilot.py $pilot_args"
-  echo cmd: $cmd
+
   log "==== pilot stdout BEGIN ===="
-  $cmd &
+  scratch=$(pwd)
+  # PAL $cmd &
+  exit 1 # PAL
   pilotpid=$!
   wait $pilotpid
   pilotrc=$?
