@@ -5,7 +5,7 @@
 # https://google.github.io/styleguide/shell.xml
 
 
-VERSION=20171009-rc
+VERSION=20171009-rc1
 #echo VERSION=${VERSION}
 #echo 'This version should not be used yet, exiting'
 #exit 1
@@ -151,10 +151,11 @@ function get_singopts() {
   if [[ $? -eq 0 ]]; then
     log "singularity_options found: $singopts"
     echo $singopts
+    return 0
   else
     err "singularity_options not found"
+    return 1
   fi
-  
 }
 
 function pilot_cmd() {
@@ -363,11 +364,13 @@ function main() {
 
   echo "---- Get singularity options ----"
   sing_opts=$(get_singopts)
+  if [[ $? -eq 0 ]]; then
+    use_singularity=true
+  fi
   echo $sing_opts
   echo
 
   echo "---- Check whether or not to use singularity ----"
-  use_singularity=false  # hardcoded for now
   if [[ ${use_singularity} = true ]]; then
     log 'Will use singularity'
     echo '   _____ _                   __           _ __        '
