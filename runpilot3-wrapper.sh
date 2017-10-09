@@ -5,10 +5,10 @@
 # https://google.github.io/styleguide/shell.xml
 
 
-VERSION=20171006-rc
-echo VERSION=${VERSION}
-echo 'This version should not be used yet, exiting'
-exit 1
+VERSION=20171009-rc
+#echo VERSION=${VERSION}
+#echo 'This version should not be used yet, exiting'
+#exit 1
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -42,7 +42,7 @@ function check_python() {
 
 function check_proxy() {
   voms-proxy-info -all
-  if [[ "$?" -ne 0 ]]; then
+  if [[ $? -ne 0 ]]; then
     log "FATAL: error running: voms-proxy-info -all"
     err "FATAL: error running: voms-proxy-info -all"
     monfault exiting 1
@@ -77,8 +77,9 @@ function check_tags() {
 
 function setup_alrb() {
   if [ -d /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase ]; then
+    log 'source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh'
     export ATLAS_LOCAL_ROOT_BASE='/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase'
-    source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh --quiet
+    source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh
   else
     log "ERROR: ALRB not found: /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase, exiting"
     err "ERROR: ALRB not found: /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase, exiting"
@@ -91,7 +92,7 @@ function setup_ddm() {
   if [[ ${PILOT_TYPE} = "RC" ]]; then
     echo "Running: lsetup rucio testing"
     lsetup rucio testing
-    if [[ "$?" -ne 0 ]]; then
+    if [[ $? -ne 0 ]]; then
       log 'FATAL: error running "lsetup rucio testing", exiting.'
       err 'FATAL: error running "lsetup rucio testing", exiting.'
       monfault 1
@@ -100,7 +101,7 @@ function setup_ddm() {
   else
     echo "Running: lsetup rucio"
     lsetup rucio
-    if [[ "$?" -ne 0 ]]; then
+    if [[ $? -ne 0 ]]; then
       log 'FATAL: error running "lsetup rucio", exiting.'
       err 'FATAL: error running "lsetup rucio", exiting.'
       monfault 1
@@ -112,7 +113,7 @@ function setup_ddm() {
 
 # still needed? using VO_ATLAS_SW_DIR is specific to EGI
 function setup_local() {
-  echo "Looking for ${VO_ATLAS_SW_DIR}/local/setup.sh"
+  log "Looking for ${VO_ATLAS_SW_DIR}/local/setup.sh"
   if [[ -f ${VO_ATLAS_SW_DIR}/local/setup.sh ]]; then
     echo "Sourcing ${VO_ATLAS_SW_DIR}/local/setup.sh -s $sflag"
     source ${VO_ATLAS_SW_DIR}/local/setup.sh -s $sflag
@@ -126,7 +127,7 @@ function setup_davix() {
   log "Sourcing $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh davix -q"
   source $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh davix -q
   out=$(davix-http --version)
-  if [[ "$?" -eq 0 ]]; then
+  if [[ $? -eq 0 ]]; then
     log "$out"
   else
     err "davix-http not available, exiting"
@@ -136,10 +137,9 @@ function setup_davix() {
 }
 
 function check_singularity() {
-  singbin=$(which singulartiy 2> /dev/null)
-  if [ -n ${singbin} ]; then
-    ver=$(singularity --version)
-    log "Singularity binary found: $singbin $ver"
+  out=$(singularity --version)
+  if [[ $? -eq 0 ]]; then
+    log "Singularity binary found, version $out"
   else
     log "Singularity binary not found"
   fi
@@ -148,7 +148,7 @@ function check_singularity() {
 function get_singopts() {
   url="http://pandaserver.cern.ch:25085/cache/schedconfig/$sflag.all.json"
   singopts=$(curl --silent $url | awk -F"'" '/singularity_options/ {print $2}')
-  if [[ "$?" -eq 0 ]]; then
+  if [[ $? -eq 0 ]]; then
     log "singularity_options found: $singopts"
     echo $singopts
   else
@@ -214,7 +214,7 @@ function monrunning() {
   out=$(curl -ksS --connect-timeout 10 --max-time 20 \
              -d state=running -d wrapper=$VERSION \
              ${APFMON}/jobs/${APFFID}:${APFCID})
-  if [[ "$?" -eq 0 ]]; then
+  if [[ $? -eq 0 ]]; then
     log $out
   else
     err "wrapper monitor warning"
@@ -229,7 +229,7 @@ function monexiting() {
   fi
 
   out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=exiting -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID})
-  if [[ "$?" -eq 0 ]]; then
+  if [[ $? -eq 0 ]]; then
     log $out
   else
     err "warning: wrapper monitor"
@@ -244,7 +244,7 @@ function monfault() {
   fi
 
   out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=fault -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID})
-  if [[ "$?" -eq 0 ]]; then
+  if [[ $? -eq 0 ]]; then
     log $out
   else
     err "warning: wrapper monitor"
@@ -306,6 +306,7 @@ function main() {
   err "==== wrapper stderr BEGIN ===="
   # notify monitoring, job running
   monrunning
+  echo
 
   echo "---- Host environment ----"
   echo "hostname:" $(hostname)
@@ -340,15 +341,17 @@ function main() {
     
   log "cd $temp"
   cd $temp
+  echo
   
   echo "---- Retrieve pilot code ----"
   get_pilot
-  if [[ "$?" -ne 0 ]]; then
+  if [[ $? -ne 0 ]]; then
     log "FATAL: failed to retrieve pilot code"
     err "FATAL: failed to retrieve pilot code"
     monfault 1
     exit 1
   fi
+  echo
   
   echo "---- JOB Environment ----"
   printenv | sort
@@ -413,10 +416,12 @@ function main() {
   else
     log 'Will NOT use singularity'
   fi
+  echo
 
   echo "---- Build pilot cmd ----"
   cmd=$(pilot_cmd)
   echo cmd: ${cmd}
+  echo
 
   echo "---- Ready to run pilot ----"
   trap term_handler SIGTERM
@@ -429,8 +434,7 @@ function main() {
   log "cd $temp/pilot3"
 
   log "==== pilot stdout BEGIN ===="
-  # PAL $cmd &
-  exit 1 # PAL
+  $cmd &
   pilotpid=$!
   wait $pilotpid
   pilotrc=$?
@@ -448,7 +452,6 @@ function main() {
   monexiting $scode
   
   # Now wipe out our temp run directory, so as not to leave rubbish lying around
-  cd $startdir
   log "cleanup: rm -rf $temp"
   rm -fr $temp
   
