@@ -252,45 +252,9 @@ function monfault() {
   fi
 }
 
-function term_handler() {
-  log "Caught SIGTERM, sending to pilot PID:$pilotpid"
-  err "Caught SIGTERM, sending to pilot PID:$pilotpid"
-  kill -s SIGTERM $pilotpid
-  wait
-}
-
-function quit_handler() {
-  log "Caught SIGQUIT, sending to pilot PID:$pilotpid"
-  err "Caught SIGQUIT, sending to pilot PID:$pilotpid"
-  kill -s SIGQUIT $pilotpid
-  wait
-}
-
-function segv_handler() {
-  log "Caught SIGSEGV, sending to pilot PID:$pilotpid"
-  err "Caught SIGSEGV, sending to pilot PID:$pilotpid"
-  kill -s SIGSEGV $pilotpid
-  wait
-}
-
-function xcpu_handler() {
-  log "Caught SIGXCPU, sending to pilot PID:$pilotpid"
-  err "Caught SIGXCPU, sending to pilot PID:$pilotpid"
-  kill -s SIGXCPU $pilotpid
-  wait
-}
-
-function usr1_handler() {
-  log "Caught SIGUSR1, sending to pilot PID:$pilotpid"
-  err "Caught SIGUSR1, sending to pilot PID:$pilotpid"
-  kill -s SIGUSR1 $pilotpid
-  wait
-}
-
-function bus_handler() {
-  log "Caught SIGBUS, sending to pilot PID:$pilotpid"
-  err "Caught SIGBUS, sending to pilot PID:$pilotpid"
-  kill -s SIGBUS $pilotpid
+function trap_handler() {
+  log "Caught $1, signalling pilot PID: $pilotpid"
+  kill -s $1 $pilotpid
   wait
 }
 
@@ -424,12 +388,7 @@ function main() {
   echo
 
   echo "---- Ready to run pilot ----"
-  trap term_handler SIGTERM
-  trap quit_handler SIGQUIT
-  trap segv_handler SIGSEGV
-  trap xcpu_handler SIGXCPU
-  trap usr1_handler SIGUSR1
-  trap bus_handler SIGBUS
+  trap trap_handler SIGTERM SIGQUIT SIGSEGV SIGXCPU SIGUSR1 SIGBUS
   cd $temp/pilot3
   log "cd $temp/pilot3"
 
