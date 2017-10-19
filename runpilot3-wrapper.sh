@@ -4,11 +4,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-
-VERSION=20171009-rc1
-#echo VERSION=${VERSION}
-#echo 'This version should not be used yet, exiting'
-#exit 1
+VERSION=20171019
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -18,6 +14,15 @@ function err() {
 function log() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
   echo $dt $@
+}
+
+function get_workdir {
+  # If we have TMPDIR defined, then use this directory
+  if [[ -n ${TMPDIR} ]]; then
+    cd ${TMPDIR}
+  templ=$(pwd)/condorg_XXXXXXXX
+  temp=$(mktemp -d $templ)
+  echo ${temp}
 }
 
 function check_python() {
@@ -35,7 +40,7 @@ function check_python() {
       # Oh dear, we're doomed...
       log "FATAL: Failed to find a compatible python, exiting"
       err "FATAL: Failed to find a compatible python, exiting"
-      monfault 1
+      apfmon_fault 1
       exit 1
     fi
 }
@@ -45,7 +50,7 @@ function check_proxy() {
   if [[ $? -ne 0 ]]; then
     log "FATAL: error running: voms-proxy-info -all"
     err "FATAL: error running: voms-proxy-info -all"
-    monfault exiting 1
+    apfmon_fault 1
     exit 1
   fi
 }
@@ -57,7 +62,7 @@ function check_cvmfs() {
     log "ERROR: /cvmfs/atlas.cern.ch/repo/sw not found"
     log "FATAL: Failed to find atlas cvmfs software repository. This is a bad site, exiting."
     err "FATAL: Failed to find atlas cvmfs software repository. This is a bad site, exiting."
-    monfault 1
+    apfmon_fault 1
     exit 1
   fi
 }
@@ -69,7 +74,7 @@ function check_tags() {
   else
     log "ERROR: tags file does not exist: /cvmfs/atlas.cern.ch/repo/sw/tags, exiting."
     err "ERROR: tags file does not exist: /cvmfs/atlas.cern.ch/repo/sw/tags, exiting."
-    monfault 1
+    apfmon_fault 1
     exit 1
   fi
   echo
@@ -78,33 +83,32 @@ function check_tags() {
 function setup_alrb() {
   if [ -d /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase ]; then
     log 'source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh'
-    export ATLAS_LOCAL_ROOT_BASE='/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase'
     source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh
   else
     log "ERROR: ALRB not found: /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase, exiting"
     err "ERROR: ALRB not found: /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase, exiting"
-    monfault 1
+    apfmon_fault 1
     exit 1
   fi
 }
 
-function setup_ddm() {
+function setup_tools() {
   if [[ ${PILOT_TYPE} = "RC" ]]; then
-    echo "Running: lsetup rucio testing"
-    lsetup rucio testing
+    log 'PILOT_TYPE=RC, lsetup "rucio testing" davix xrootd'
+    lsetup "rucio testing" davix xrootd
     if [[ $? -ne 0 ]]; then
-      log 'FATAL: error running "lsetup rucio testing", exiting.'
-      err 'FATAL: error running "lsetup rucio testing", exiting.'
-      monfault 1
+      log 'FATAL: error running: lsetup "rucio testing" davix xrootd'
+      err 'FATAL: error running: lsetup "rucio testing" davix xrootd'
+      apfmon_fault 1
       exit 1
     fi
   else
-    echo "Running: lsetup rucio"
-    lsetup rucio
+    log 'lsetup rucio davix xrootd'
+    lsetup rucio davix xrootd 
     if [[ $? -ne 0 ]]; then
-      log 'FATAL: error running "lsetup rucio", exiting.'
-      err 'FATAL: error running "lsetup rucio", exiting.'
-      monfault 1
+      log 'FATAL: error running "lsetup rucio davix xrootd", exiting.'
+      err 'FATAL: error running "lsetup rucio davix xrootd", exiting.'
+      apfmon_fault 1
       exit 1
     fi
   fi
@@ -123,21 +127,8 @@ function setup_local() {
   fi
 }
 
-function setup_davix() {
-  log "Sourcing $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh davix -q"
-  source $ATLAS_LOCAL_ROOT_BASE/packageSetups/localSetup.sh davix -q
-  out=$(davix-http --version)
-  if [[ $? -eq 0 ]]; then
-    log "$out"
-  else
-    err "davix-http not available, exiting"
-    monfault 1
-    exit 1
-  fi
-}
-
 function check_singularity() {
-  out=$(singularity --version)
+  out=$(singularity --version 2>/dev/null)
   if [[ $? -eq 0 ]]; then
     log "Singularity binary found, version $out"
   else
@@ -147,29 +138,25 @@ function check_singularity() {
 
 function get_singopts() {
   url="http://pandaserver.cern.ch:25085/cache/schedconfig/$sflag.all.json"
-  singopts=$(curl --silent $url | awk -F"'" '/singularity_options/ {print $2}')
+  catchall=$(curl --silent $url | grep catchall | grep singularity_options)
   if [[ $? -eq 0 ]]; then
-    log "singularity_options found: $singopts"
-    echo $singopts
+    singopts=$(echo $catchall | awk -F"'" '/singularity_options/ {print $2}')
+    log "AGIS catchall singularity_options found"
+    echo ${singopts}
     return 0
   else
-    err "singularity_options not found"
+    log "AGIS catchall singularity_options not found"
     return 1
   fi
 }
 
 function pilot_cmd() {
-  if [[ -n "$PILOT_TYPE" ]]; then
-    pilot_args="-d $temp $myargs -i $PILOT_TYPE -G 1"
+  if [[ -n "${PILOT_TYPE}" ]]; then
+    pilot_args="-d $workdir $myargs -i ${PILOT_TYPE} -G 1"
   else
-    pilot_args="-d $temp $myargs -G 1"
+    pilot_args="-d $workdir $myargs -G 1"
   fi
-
-  if [[ ${use_singularity} = true ]]; then
-    cmd="$singbin exec $singopts /cvmfs/atlas.cern.ch/repo/images/singularity/x86_64-slc6.img python pilot.py $pilot_args"
-  else
-    cmd="$pybin pilot.py $pilot_args"
-  fi
+  cmd="$pybin pilot.py $pilot_args"
   echo ${cmd}
 }
 
@@ -206,7 +193,7 @@ function get_pilot() {
   return 1
 }
 
-function monrunning() {
+function apfmon_running() {
   if [ -z ${APFMON} ]; then
     err "wrapper monitoring not configured"
     return
@@ -223,7 +210,7 @@ function monrunning() {
   fi
 }
 
-function monexiting() {
+function apfmon_exiting() {
   if [ -z ${APFMON} ]; then
     err "wrapper monitoring not configured"
     return
@@ -233,12 +220,12 @@ function monexiting() {
   if [[ $? -eq 0 ]]; then
     log $out
   else
-    err "warning: wrapper monitor"
+    err "WARNING: wrapper monitor"
     err "ARGS: -d state=exiting -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}"
   fi
 }
 
-function monfault() {
+function apfmon_fault() {
   if [ -z ${APFMON} ]; then
     err "wrapper monitoring not configured"
     return
@@ -248,7 +235,7 @@ function monfault() {
   if [[ $? -eq 0 ]]; then
     log $out
   else
-    err "warning: wrapper monitor"
+    err "WARNING: wrapper monitor"
     err "ARGS: -d state=fault -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}"
   fi
 }
@@ -263,16 +250,59 @@ function main() {
   #
   # Fail early, fail often^H with useful diagnostics
   #
-  
-  echo "This is ATLAS pilot wrapper version: $VERSION"
-  echo "Please send development requests to p.love@lancaster.ac.uk"
-  
-  log "==== wrapper stdout BEGIN ===="
-  err "==== wrapper stderr BEGIN ===="
-  # notify monitoring, job running
-  monrunning
-  echo
 
+  if [[ -z ${SINGULARITY_INIT} ]]; then
+    echo "This is ATLAS pilot wrapper version: $VERSION"
+    echo "Please send development requests to p.love@lancaster.ac.uk"
+    log "==== wrapper stdout BEGIN ===="
+    err "==== wrapper stderr BEGIN ===="
+    apfmon_running
+    echo
+
+    echo "---- Check singularity details ----"
+    sing_opts=$(get_singopts)
+    if [[ $? -eq 0 ]]; then
+      use_singularity=true
+    else
+      use_singularity=false
+    fi
+    echo $sing_opts
+
+    if [[ ${use_singularity} = true ]]; then
+      log 'SINGULARITY_INIT is not set'
+      check_singularity
+      export ALRB_noGridMW=NO
+      export SINGULARITYENV_PATH=${PATH}
+      export SINGULARITYENV_LD_LIBRARY_PATH=${LD_LIBRARY_PATH}
+      echo '   _____ _                   __           _ __        '
+      echo '  / ___/(_)___  ____ ___  __/ /___ ______(_) /___  __ '
+      echo '  \__ \/ / __ \/ __ `/ / / / / __ `/ ___/ / __/ / / / '
+      echo ' ___/ / / / / / /_/ / /_/ / / /_/ / /  / / /_/ /_/ /  '
+      echo '/____/_/_/ /_/\__, /\__,_/_/\__,_/_/  /_/\__/\__, /   '
+      echo '             /____/                         /____/    '
+      echo
+      cmd="singularity exec $singopts /cvmfs/atlas.cern.ch/repo/images/singularity/x86_64-slc6.img $0 $@"
+      echo "cmd: $cmd"
+      log '==== singularity stdout BEGIN ===='
+      err '==== singularity stderr BEGIN ===='
+      $cmd &
+      singpid=$!
+      wait $singpid
+      log "singularity return code: $?"
+      log '==== singularity stdout END ===='
+      err '==== singularity stderr END ===='
+      log "==== wrapper stdout END ===="
+      err "==== wrapper stderr END ===="
+      exit 0
+    else
+      log 'Will NOT use singularity'
+    fi
+    echo
+  else
+    log 'SINGULARITY_INIT is set, run basic setup'
+    export ALRB_noGridMW=NO
+  fi
+  
   echo "---- Host environment ----"
   echo "hostname:" $(hostname)
   echo "hostname -f:" $(hostname -f)
@@ -283,29 +313,14 @@ function main() {
     echo "/proc/version:" $(cat /proc/version)
   fi
   myargs=$@
-  echo "cmd: $0 $myargs"
+  echo "wrapper call: $0 $myargs"
   log "wrapper getopts: -h $hflag -p $pflag -s $sflag -u $uflag -w $wflag"
   echo
   
-  # If we have TMPDIR defined, then move into this directory
-  # If it's not defined, then stay where we are
-  if [ -n "$TMPDIR" ]; then
-    log "cd \$TMPDIR: $TMPDIR"
-    cd $TMPDIR
-  fi
-  templ=$(pwd)/condorg_XXXXXXXX
-  temp=$(mktemp -d $templ)
-  if [ $? -ne 0 ]; then
-    err "Failed: mktemp $templ"
-    log "Failed: mktemp $templ"
-    err "Exiting."
-    log "Exiting."
-    monfault 1
-    exit 1
-  fi
-    
-  log "cd $temp"
-  cd $temp
+  echo "---- Enter workdir ----"
+  workdir=$(get_workdir)
+  log "cd ${workdir}"
+  cd ${workdir}
   echo
   
   echo "---- Retrieve pilot code ----"
@@ -313,12 +328,16 @@ function main() {
   if [[ $? -ne 0 ]]; then
     log "FATAL: failed to retrieve pilot code"
     err "FATAL: failed to retrieve pilot code"
-    monfault 1
+    apfmon_fault 1
     exit 1
   fi
   echo
   
   echo "---- JOB Environment ----"
+  export SITE_NAME=${sflag}
+  export VO_ATLAS_SW_DIR='/cvmfs/atlas.cern.ch/repo/sw'
+  export ALRB_userMenuFmtSkip=YES
+  export ATLAS_LOCAL_ROOT_BASE='/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase'
   printenv | sort
   echo
   
@@ -330,61 +349,26 @@ function main() {
   check_python
   echo
 
-  echo "---- Proxy Information ----"
-  check_proxy
-  echo
-  
   echo "---- Check cvmfs area ----"
   check_cvmfs
   echo
 
-  echo "---- Check cvmfs freshness ----"
-  check_tags
-  echo
-  
   echo "---- Setup ALRB ----"
   setup_alrb
   echo
 
-  echo "---- Setup DDM ----"
-  setup_ddm
+  echo "---- Setup tools ----"
+  setup_tools
   echo
 
   echo "---- Setup local ATLAS ----"
   setup_local
   echo
 
-  echo "---- Davix setup ----"
-  setup_davix
+  echo "---- Proxy Information ----"
+  check_proxy
   echo
-
-  echo "---- Check singularity binary ----"
-  check_singularity
-  echo
-
-  echo "---- Get singularity options ----"
-  sing_opts=$(get_singopts)
-  if [[ $? -eq 0 ]]; then
-    use_singularity=true
-  fi
-  echo $sing_opts
-  echo
-
-  echo "---- Check whether or not to use singularity ----"
-  if [[ ${use_singularity} = true ]]; then
-    log 'Will use singularity'
-    echo '   _____ _                   __           _ __        '
-    echo '  / ___/(_)___  ____ ___  __/ /___ ______(_) /___  __ '
-    echo '  \__ \/ / __ \/ __ `/ / / / / __ `/ ___/ / __/ / / / '
-    echo ' ___/ / / / / / /_/ / /_/ / / /_/ / /  / / /_/ /_/ /  '
-    echo '/____/_/_/ /_/\__, /\__,_/_/\__,_/_/  /_/\__/\__, /   '
-    echo '             /____/                         /____/    '
-    echo
-  else
-    log 'Will NOT use singularity'
-  fi
-  echo
-
+  
   echo "---- Build pilot cmd ----"
   cmd=$(pilot_cmd)
   echo cmd: ${cmd}
@@ -392,8 +376,8 @@ function main() {
 
   echo "---- Ready to run pilot ----"
   trap trap_handler SIGTERM SIGQUIT SIGSEGV SIGXCPU SIGUSR1 SIGBUS
-  cd $temp/pilot3
-  log "cd $temp/pilot3"
+  cd $workdir/pilot3
+  log "cd $workdir/pilot3"
 
   log "==== pilot stdout BEGIN ===="
   $cmd &
@@ -411,15 +395,16 @@ function main() {
     scode=$pilotrc
   fi
   log "STATUSCODE: $scode"
-  monexiting $scode
+  apfmon_exiting $scode
   
-  # Now wipe out our temp run directory, so as not to leave rubbish lying around
-  log "cleanup: rm -rf $temp"
-  rm -fr $temp
+  log "cleanup: rm -rf $workdir"
+  rm -fr $workdir
   
-  log "==== wrapper stdout END ===="
-  err "==== wrapper stderr END ===="
-  exit
+  if [[ -z ${SINGULARITY_INIT} ]]; then
+    log "==== wrapper stdout END ===="
+    err "==== wrapper stderr END ===="
+  fi
+  exit 0
 }
 
 hflag=''
