@@ -4,7 +4,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20171019
+VERSION=20171019b
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -20,6 +20,7 @@ function get_workdir {
   # If we have TMPDIR defined, then use this directory
   if [[ -n ${TMPDIR} ]]; then
     cd ${TMPDIR}
+  fi
   templ=$(pwd)/condorg_XXXXXXXX
   temp=$(mktemp -d $templ)
   echo ${temp}
