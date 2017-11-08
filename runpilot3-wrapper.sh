@@ -4,7 +4,10 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20171019b
+VERSION=20171103
+
+echo "This is ATLAS pilot wrapper version: $VERSION"
+echo "Please send development requests to p.love@lancaster.ac.uk"
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -138,15 +141,26 @@ function check_singularity() {
 }
 
 function get_singopts() {
-  url="http://pandaserver.cern.ch:25085/cache/schedconfig/$sflag.all.json"
-  catchall=$(curl --silent $url | grep catchall | grep singularity_options)
+  container_opts=$(curl --silent $url | grep container_options | grep -v null)
   if [[ $? -eq 0 ]]; then
-    singopts=$(echo $catchall | awk -F"'" '/singularity_options/ {print $2}')
-    log "AGIS catchall singularity_options found"
+    singopts=$(echo $container_opts | awk -F"\"" '{print $4}')
+    log "AGIS container_options found"
     echo ${singopts}
     return 0
   else
-    log "AGIS catchall singularity_options not found"
+    log "AGIS container_options not defined"
+    echo ''
+    return 0
+  fi
+}
+
+function check_agis() {
+  result=$(curl --silent $url | grep container_type | grep 'singularity:wrapper')
+  if [[ $? -eq 0 ]]; then
+    log "AGIS container_type: singularity:wrapper found"
+    return 0
+  else
+    log "AGIS container_type does not contain singularity:wrapper"
     return 1
   fi
 }
@@ -249,12 +263,10 @@ function trap_handler() {
 
 function main() {
   #
-  # Fail early, fail often^H with useful diagnostics
+  # Fail early, fail often^W with useful diagnostics
   #
 
   if [[ -z ${SINGULARITY_INIT} ]]; then
-    echo "This is ATLAS pilot wrapper version: $VERSION"
-    echo "Please send development requests to p.love@lancaster.ac.uk"
     log "==== wrapper stdout BEGIN ===="
     err "==== wrapper stderr BEGIN ===="
     apfmon_running
@@ -262,12 +274,14 @@ function main() {
 
     echo "---- Check singularity details ----"
     sing_opts=$(get_singopts)
+    echo $sing_opts
+
+    check_agis
     if [[ $? -eq 0 ]]; then
       use_singularity=true
     else
       use_singularity=false
     fi
-    echo $sing_opts
 
     if [[ ${use_singularity} = true ]]; then
       log 'SINGULARITY_INIT is not set'
@@ -427,4 +441,5 @@ while getopts 'h:p:s:u:w:' flag; do
   esac
 done
 
+url="http://pandaserver.cern.ch:25085/cache/schedconfig/$sflag.all.json"
 main "$@"
