@@ -4,7 +4,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20171103
+VERSION=20171113
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -296,7 +296,7 @@ function main() {
       echo '/____/_/_/ /_/\__, /\__,_/_/\__,_/_/  /_/\__/\__, /   '
       echo '             /____/                         /____/    '
       echo
-      cmd="singularity exec $singopts /cvmfs/atlas.cern.ch/repo/images/singularity/x86_64-slc6.img $0 $@"
+      cmd="singularity exec $sing_opts /cvmfs/atlas.cern.ch/repo/images/singularity/x86_64-slc6.img $0 $@"
       echo "cmd: $cmd"
       log '==== singularity stdout BEGIN ===='
       err '==== singularity stderr BEGIN ===='
