@@ -329,11 +329,15 @@ function main() {
   fi
   myargs=$@
   echo "wrapper call: $0 $myargs"
-  log "wrapper getopts: -h $hflag -p $pflag -s $sflag -u $uflag -w $wflag"
+  log "wrapper getopts: -h $hflag -p $pflag -s $sflag -u $uflag -w $wflag -f $fflag"
   echo
   
   echo "---- Enter workdir ----"
   workdir=$(get_workdir)
+  if [ "$fflag" = "false" -a -f pandaJobData.out ]; then
+    log "Copying job description to working dir"
+    cp pandaJobData.out $workdir/pandaJobData.out
+  fi
   log "cd ${workdir}"
   cd ${workdir}
   echo
@@ -391,6 +395,10 @@ function main() {
 
   echo "---- Ready to run pilot ----"
   trap trap_handler SIGTERM SIGQUIT SIGSEGV SIGXCPU SIGUSR1 SIGBUS
+  if [ "$fflag" = "false" -a -f pandaJobData.out ]; then
+    log "Copying job description to pilot dir"
+    cp pandaJobData.out pilot3/pandaJobData.out
+  fi
   cd $workdir/pilot3
   log "cd $workdir/pilot3"
 
@@ -422,13 +430,15 @@ function main() {
   exit 0
 }
 
+fflag=''
 hflag=''
 pflag=''
 sflag=''
 uflag=''
 wflag=''
-while getopts 'h:p:s:u:w:' flag; do
+while getopts 'f:h:p:s:u:w:' flag; do
   case "${flag}" in
+    f) fflag="${OPTARG}" ;;
     h) hflag="${OPTARG}" ;;
     p) pflag="${OPTARG}" ;;
     s) sflag="${OPTARG}" ;;
