@@ -4,7 +4,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20171113
+VERSION=20180201a
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -219,6 +219,7 @@ function apfmon_running() {
              ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ $? -eq 0 ]]; then
     log $out
+    err $out
   else
     err "wrapper monitor warning"
     err "ARGS: -d state=exiting -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}"
@@ -395,7 +396,7 @@ function main() {
 
   echo "---- Ready to run pilot ----"
   trap trap_handler SIGTERM SIGQUIT SIGSEGV SIGXCPU SIGUSR1 SIGBUS
-  if [ "$fflag" = "false" -a -f pandaJobData.out ]; then
+  if [[ "${fflag}" = "false" -a -f pandaJobData.out ]]; then
     log "Copying job description to pilot dir"
     cp pandaJobData.out pilot3/pandaJobData.out
   fi
@@ -412,7 +413,7 @@ function main() {
   log "Pilot exit status: $pilotrc"
   
   # notify monitoring, job exiting, capture the pilot exit status
-  if [ -f STATUSCODE ]; then
+  if [[ -f STATUSCODE ]]; then
     scode=$(cat STATUSCODE)
   else
     scode=$pilotrc
@@ -420,6 +421,10 @@ function main() {
   log "STATUSCODE: $scode"
   apfmon_exiting $scode
   
+  echo "---- PAL workdir find ----"
+  find ${workdir} -name pandaIDs.out -exec ls -l {} \;
+  echo
+
   log "cleanup: rm -rf $workdir"
   rm -fr $workdir
   
