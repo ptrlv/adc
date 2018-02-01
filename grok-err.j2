@@ -10,6 +10,18 @@ BEGIN {
   factory = "{{ factoryid }}"
 }
 
+match($0, /(CREAM error: Cannot find lb_logevent command)/, arr) {
+  errors[$1,"CREAM_LBERROR"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(CREAM error: Job has been terminated)/, arr) {
+  errors[$1,"CREAM_JOBTERM"]++
+  full[$1] = arr[1]
+  next
+}
+
 match($0, /(CREAM_Delegate Error: .+)/, arr) {
   errors[$1,"CREAM_DELEGATE"]++
   full[$1] = arr[1]
@@ -88,6 +100,12 @@ match($0, /(CREAM error: CREAM_Job_Purge)/, arr) {
   next
 }
 
+match($0, /(CREAM error: Cannot upload)/, arr) {
+  errors[$1,"CREAM_UPLOAD"]++
+  full[$1] = arr[1]
+  next
+}
+
 match($0, /(The job attribute PeriodicHold expression .+)/, arr) {
   errors[$1,"PERIODIC_HOLD"]++
   full[$1] = arr[1]
@@ -120,6 +138,18 @@ match($0, /(globus_xio: System error in send: Broken pipe globus_xio: A system c
 
 match($0, /(an end-of-file was reached globus_xio: An end of file occurred)/, arr) {
   errors[$1,"GLOBUS_XIO"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(globus_ftp_client: the server responded with an error 550 New jobs are not allowed)/, arr) {
+  errors[$1,"GLOBUS_FTP-NOJOBSALLOWED"]++
+  full[$1] = arr[1]
+  next
+}
+
+match($0, /(globus_ftp_client: the server responded with an error 500)/, arr) {
+  errors[$1,"GLOBUS_FTP-ERR500"]++
   full[$1] = arr[1]
   next
 }
