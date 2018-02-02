@@ -4,7 +4,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20180201a
+VERSION=20180201b
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -335,7 +335,7 @@ function main() {
   
   echo "---- Enter workdir ----"
   workdir=$(get_workdir)
-  if [ "$fflag" = "false" -a -f pandaJobData.out ]; then
+  if [ "$fflag" = "false" && -f pandaJobData.out ]; then
     log "Copying job description to working dir"
     cp pandaJobData.out $workdir/pandaJobData.out
   fi
@@ -396,7 +396,7 @@ function main() {
 
   echo "---- Ready to run pilot ----"
   trap trap_handler SIGTERM SIGQUIT SIGSEGV SIGXCPU SIGUSR1 SIGBUS
-  if [[ "${fflag}" = "false" -a -f pandaJobData.out ]]; then
+  if [[ "${fflag}" = "false" && -f pandaJobData.out ]]; then
     log "Copying job description to pilot dir"
     cp pandaJobData.out pilot3/pandaJobData.out
   fi
