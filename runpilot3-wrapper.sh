@@ -4,7 +4,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20180201b
+VERSION=20180209a
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -227,7 +227,7 @@ function apfmon_running() {
     err $out
   else
     err "wrapper monitor warning"
-    err "ARGS: -d state=exiting -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}"
+    err "ARGS: -d state=running -d wrapper=$VERSION ${APFMON}/jobs/${APFFID}:${APFCID}"
   fi
 }
 
@@ -340,7 +340,7 @@ function main() {
   
   echo "---- Enter workdir ----"
   workdir=$(get_workdir)
-  if [ "$fflag" = "false" && -f pandaJobData.out ]; then
+  if [[ "$fflag" = "false" && -f pandaJobData.out ]]; then
     log "Copying job description to working dir"
     cp pandaJobData.out $workdir/pandaJobData.out
   fi
@@ -428,6 +428,7 @@ function main() {
   
   echo "---- PAL workdir find ----"
   find ${workdir} -name pandaIDs.out -exec ls -l {} \;
+  find ${workdir} -name pandaIDs.out -exec cat {} \;
   echo
 
   log "cleanup: rm -rf $workdir"
