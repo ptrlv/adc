@@ -316,7 +316,7 @@ function main() {
       err "==== wrapper stderr END ===="
       exit 0
     else
-      log 'Will NOT use singularity'
+      log 'Will NOT use singularity, at least not from the wrapper'
     fi
     echo
   else
