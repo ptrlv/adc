@@ -4,7 +4,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20180209a
+VERSION=20180301a
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -361,6 +361,7 @@ function main() {
   echo "---- JOB Environment ----"
   export SITE_NAME=${sflag}
   export VO_ATLAS_SW_DIR='/cvmfs/atlas.cern.ch/repo/sw'
+  export ALRB_noGridMW=YES
   export ALRB_userMenuFmtSkip=YES
   export ATLAS_LOCAL_ROOT_BASE='/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase'
   printenv | sort
