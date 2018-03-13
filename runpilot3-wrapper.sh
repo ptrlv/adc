@@ -4,7 +4,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20180301a
+VERSION=20180313a
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -237,7 +237,9 @@ function apfmon_exiting() {
     return
   fi
 
-  out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=exiting -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID})
+  out=$(curl -ksS --connect-timeout 10 --max-time 20 \
+             -d state=exiting -d rc=$1 -d ids=$2 \
+             ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ $? -eq 0 ]]; then
     log $out
   else
@@ -418,19 +420,27 @@ function main() {
   log "==== wrapper stdout RESUME ===="
   log "Pilot exit status: $pilotrc"
   
+  log "---- Extract pandaIDs ----"
+  pandaidfile=${workdir}/pilot3/pandaIDs.out 
+  if [[ -f ${pandaidfile} ]]; then
+    log "pandaIDs file found: ${pandaidfile}"
+    cat ${pandaidfile}
+    pandaids=$(paste -s -d, ${pandaidfile})
+    log "pandaIDs: ${pandaids}"
+  else
+    log "pandaIDs file NOT found: ${pandaidfile}"
+    err "pandaIDs file NOT found: ${pandaidfile}"
+  fi
+  echo
+
   # notify monitoring, job exiting, capture the pilot exit status
   if [[ -f STATUSCODE ]]; then
     scode=$(cat STATUSCODE)
   else
     scode=$pilotrc
   fi
-  log "STATUSCODE: $scode"
-  apfmon_exiting $scode
-  
-  echo "---- PAL workdir find ----"
-  find ${workdir} -name pandaIDs.out -exec ls -l {} \;
-  find ${workdir} -name pandaIDs.out -exec cat {} \;
-  echo
+  log "STATUSCODE: ${scode}"
+  apfmon_exiting ${scode} ${pandaids}
 
   log "cleanup: rm -rf $workdir"
   rm -fr $workdir
