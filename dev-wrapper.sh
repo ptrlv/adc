@@ -4,7 +4,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=devel
+VERSION=20180323dev5
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -197,6 +197,9 @@ function main() {
   # Fail early, fail often^W with useful diagnostics
   #
 
+  log "==== wrapper stdout BEGIN ===="
+  err "==== wrapper stderr BEGIN ===="
+  apfmon_running
   echo "---- Host environment ----"
   echo "hostname:" $(hostname)
   echo "hostname -f:" $(hostname -f)
@@ -255,8 +258,14 @@ function main() {
   
   echo "---- Ready to run cmd ----"
   log "==== cmd stdout BEGIN ===="
+
+  git clone https://github.com/ptrlv/stressos.git
+  cd stressos
+  ls -l 
+  source /cvmfs/atlas.cern.ch/repo/sw/external/boto/setup.sh
+  python -c "import boto; print boto.__version__" 
   cmd=sleep
-  $cmd 30 &
+  $cmd 5 &
   cmdpid=$!
   wait ${cmdpid}
   cmdrc=$?
