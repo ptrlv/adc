@@ -7,7 +7,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20180214-pilot2
+VERSION=20180515-pilot2
 
 echo "This is ATLAS pilot2 wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -188,18 +188,19 @@ function get_pilot() {
   # N.B. an RC pilot is chosen once every 100 downloads for production and
   # ptest jobs use Paul's development release.
 
+  # pilot2 has a single version for development, for now
   if [[ -z ${PILOT_HTTP_SOURCES} ]]; then
     if echo $myargs | grep -- "-u ptest" > /dev/null; then 
       log "This is a ptest pilot. Development pilot will be used"
-      PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilotcode-dev.tar.gz"
+      PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2.tar.gz"
       PILOT_TYPE=PT
     elif [[ $(($RANDOM%100)) = "0" ]]; then
       log "Release candidate pilot will be used"
-      PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode-rc.tar.gz"
+      PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2.tar.gz"
       PILOT_TYPE=RC
     else
       log "Normal production pilot will be used" 
-      PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode-PICARD.tar.gz"
+      PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2.tar.gz"
       PILOT_TYPE=PR
     fi
   fi
