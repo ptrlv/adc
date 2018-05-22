@@ -180,7 +180,7 @@ function pilot_cmd() {
   fi
   # PAL manual for pilto2 dev on ai67
   #pilot_args="-d -a ${workdir} -j ptest -w generic --pilot-user=ATLAS --url=https://aipanda007.cern.ch ${myargs}"
-  cmd="${pybin} pilot.py -q ${qarg} -r ${rarg} -s ${sarg} $pilot_args"
+  cmd="${pybin} pilot.py -q ${qarg} -r ${rarg} -s ${sarg} --pilot-user=ATLAS $pilot_args"
   echo ${cmd}
 }
 
