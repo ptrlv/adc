@@ -7,10 +7,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20180515-pilot2
-
-echo "This is ATLAS pilot2 wrapper version: $VERSION"
-echo "Please send development requests to p.love@lancaster.ac.uk"
+VERSION=20180522-pilot2
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -125,8 +122,8 @@ function setup_tools() {
 function setup_local() {
   log "Looking for ${VO_ATLAS_SW_DIR}/local/setup.sh"
   if [[ -f ${VO_ATLAS_SW_DIR}/local/setup.sh ]]; then
-    log "Sourcing ${VO_ATLAS_SW_DIR}/local/setup.sh -s $sflag"
-    source ${VO_ATLAS_SW_DIR}/local/setup.sh -s $sflag
+    log "Sourcing ${VO_ATLAS_SW_DIR}/local/setup.sh -s $sarg"
+    source ${VO_ATLAS_SW_DIR}/local/setup.sh -s $sarg
   else
     log 'WARNING: No ATLAS local setup found'
     err 'WARNING: this site has no local setup ${VO_ATLAS_SW_DIR}/local/setup.sh'
@@ -174,13 +171,16 @@ function check_agis() {
 
 function pilot_cmd() {
   if [[ -n "${PILOT_TYPE}" ]]; then
-    pilot_args="-d $workdir $myargs -i ${PILOT_TYPE} -G 1"
+    pilot_args="-a ${workdir} -i ${PILOT_TYPE}"
   else
-    pilot_args="-d $workdir $myargs -G 1"
+    pilot_args="-a ${workdir}"
   fi
-  # PAL override for pilot2 devel
-  pilot_args="-d -a ${workdir} -j ptest -w generic --pilot-user=ATLAS --url=https://aipanda007.cern.ch ${myargs}"
-  cmd="$pybin pilot.py $pilot_args"
+  if [[ -n "${xarg}" ]]; then
+    pilot_args="${pilot_args} ${xarg}"
+  fi
+  # PAL manual for pilto2 dev on ai67
+  #pilot_args="-d -a ${workdir} -j ptest -w generic --pilot-user=ATLAS --url=https://aipanda007.cern.ch ${myargs}"
+  cmd="${pybin} pilot.py -q ${qarg} -r ${rarg} -s ${sarg} $pilot_args"
   echo ${cmd}
 }
 
@@ -192,7 +192,7 @@ function get_pilot() {
   if [[ -z ${PILOT_HTTP_SOURCES} ]]; then
     if echo $myargs | grep -- "-u ptest" > /dev/null; then 
       log "This is a ptest pilot. Development pilot will be used"
-      PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2.tar.gz"
+      PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2-dev.tar.gz"
       PILOT_TYPE=PT
     elif [[ $(($RANDOM%100)) = "0" ]]; then
       log "Release candidate pilot will be used"
@@ -205,16 +205,14 @@ function get_pilot() {
     fi
   fi
 
-  for url in ${PILOT_HTTP_SOURCES}; do
-#PAL    mkdir pilot3
-    curl --connect-timeout 30 --max-time 180 -sS $url | tar -xzf -
-    # PAL
+  for piloturl in ${PILOT_HTTP_SOURCES}; do
+    curl --connect-timeout 30 --max-time 180 -sS ${piloturl} | tar -xzf -
     if [ -f pilot2/pilot.py ]; then
-      log "Pilot download OK: ${url}"
+      log "Pilot download OK: ${piloturl}"
       return 0
     fi
-    log "ERROR: pilot download and extraction failed: ${url}"
-    err "ERROR: pilot download and extraction failed: ${url}"
+    log "ERROR: pilot download and extraction failed: ${piloturl}"
+    err "ERROR: pilot download and extraction failed: ${piloturl}"
   done
   return 1
 }
@@ -277,6 +275,9 @@ function main() {
   #
   # Fail early, fail often^W with useful diagnostics
   #
+
+  echo "This is ATLAS pilot2 wrapper version: $VERSION"
+  echo "Please send development requests to p.love@lancaster.ac.uk"
 
   if [[ -z ${SINGULARITY_INIT} ]]; then
     log "==== wrapper stdout BEGIN ===="
@@ -342,7 +343,6 @@ function main() {
   fi
   myargs=$@
   echo "wrapper call: $0 $myargs"
-  log "wrapper getopts: -p $pflag -s $sflag -u $uflag -w $wflag -f $fflag"
   echo
   
   echo "---- Enter workdir ----"
@@ -433,13 +433,13 @@ function main() {
   log "STATUSCODE: $scode"
   apfmon_exiting $scode
   
-  echo "---- PAL workdir find ----"
+  echo "---- find pandaID.out ----"
   find ${workdir} -name pandaIDs.out -exec ls -l {} \;
   find ${workdir} -name pandaIDs.out -exec cat {} \;
   echo
 
   log "cleanup: rm -rf $workdir"
-#PAL  rm -fr $workdir
+  rm -fr $workdir
   
   if [[ -z ${SINGULARITY_INIT} ]]; then
     log "==== wrapper stdout END ===="
@@ -448,28 +448,40 @@ function main() {
   exit 0
 }
 
-# option are explicit. We do not accept unknown pilot options
-# pilot2 opts are s:q:r  (site,queue,resource)
+function usage () {
+  echo "Usage: $0 [-f] -q <queue> -r <resource> -s <site> [-x <pilot_args>]"
+  echo
+  echo "  -f,   if false, then force push mode"
+  echo "  -q,   panda queue"
+  echo "  -r,   panda resource"
+  echo "  -s,   sitename for local setup"
+  echo "  -x,   additional pilot args"
+  echo
+  exit 1
+}
+
+# wrapper args are explicit if used in the wrapper
+# additional pilot2 args are given via the -x option
 fflag=''
-pflag=''
-sflag=''
-uflag=''
-wflag=''
-while getopts 'f:h:p:q:r:s:u:w:' flag; do
-  case "${flag}" in
+qarg=''
+rarg=''
+sarg=''
+xarg=''
+while getopts 'hf:q:r:s:x:' item; do
+  case "${item}" in
+    h) usage ;;
     f) fflag="${OPTARG}" ;;    # push mode
-    p) pflag="${OPTARG}" ;;
-    s) sflag="${OPTARG}" ;;
-    u) uflag="${OPTARG}" ;;
-    w) wflag="${OPTARG}" ;;
-    A) aflag="${OPTARG}" ;;
-    v) vflag="${OPTARG}" ;;
-    o) oflag="${OPTARG}" ;;
-    q) qflag="${OPTARG}" ;;
-    r) rflag="${OPTARG}" ;;
+    s) sarg="${OPTARG}" ;;
+    q) qarg="${OPTARG}" ;;
+    r) rarg="${OPTARG}" ;;
+    x) xarg="${OPTARG}" ;;
     *) log "Unexpected option ${flag}" ;;
   esac
 done
 
-url="http://pandaserver.cern.ch:25085/cache/schedconfig/$sflag.all.json"
+if [ -z "${sarg}" ]; then usage; exit 1; fi
+if [ -z "${qarg}" ]; then usage; exit 1; fi
+if [ -z "${rarg}" ]; then usage; exit 1; fi
+
+url="http://pandaserver.cern.ch:25085/cache/schedconfig/$sarg.all.json"
 main "$@"
