@@ -449,7 +449,7 @@ function main() {
 }
 
 function usage () {
-  echo "Usage: $0 [-f] -q <queue> -r <resource> -s <site> [-x <pilot_args>]"
+  echo "Usage: $0 [-f false] -q <queue> -r <resource> -s <site> [-x <pilot_args>]"
   echo
   echo "  -f,   if false, then force push mode"
   echo "  -q,   panda queue"
