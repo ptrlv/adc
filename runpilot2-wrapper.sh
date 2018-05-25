@@ -7,7 +7,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20180522-pilot2
+VERSION=20180525-pilot2
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -449,7 +449,7 @@ function main() {
 function usage () {
   echo "Usage: $0 [-f false] -q <queue> -r <resource> -s <site> [-x <pilot_args>]"
   echo
-  echo "  -f,   if false, then force push mode"
+  echo "  -z,   if false, push mode (default is classic pull mode)"
   echo "  -q,   panda queue"
   echo "  -r,   panda resource"
   echo "  -s,   sitename for local setup"
@@ -468,7 +468,7 @@ xarg=''
 while getopts 'hz:q:r:s:x:' item; do
   case "${item}" in
     h) usage ;;
-    f) zarg="${OPTARG}" ;; 
+    z) zarg="${OPTARG}" ;; 
     s) sarg="${OPTARG}"  ;;
     q) qarg="${OPTARG}"  ;;
     r) rarg="${OPTARG}"  ;;
