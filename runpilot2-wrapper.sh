@@ -178,9 +178,7 @@ function pilot_cmd() {
   if [[ -n "${xarg}" ]]; then
     pilot_args="${pilot_args} ${xarg}"
   fi
-  # PAL manual for pilto2 dev on ai67
-  #pilot_args="-d -a ${workdir} -j ptest -w generic --pilot-user=ATLAS --url=https://aipanda007.cern.ch ${myargs}"
-  cmd="${pybin} pilot.py -q ${qarg} -r ${rarg} -s ${sarg} --pilot-user=ATLAS $pilot_args"
+  cmd="${pybin} pilot.py -q ${qarg} -r ${rarg} -s ${sarg} -z ${zarg} --pilot-user=ATLAS $pilot_args"
   echo ${cmd}
 }
 
@@ -347,7 +345,7 @@ function main() {
   
   echo "---- Enter workdir ----"
   workdir=$(get_workdir)
-  if [[ "${fflag}" = "false" && -f pandaJobData.out ]]; then
+  if [[ "${zarg}" = "false" && -f pandaJobData.out ]]; then
     log "Copying job description to working dir"
     cp pandaJobData.out $workdir/pandaJobData.out
   fi
@@ -408,7 +406,7 @@ function main() {
 
   echo "---- Ready to run pilot ----"
   trap trap_handler SIGTERM SIGQUIT SIGSEGV SIGXCPU SIGUSR1 SIGBUS
-  if [[ "${fflag}" = "false" && -f pandaJobData.out ]]; then
+  if [[ "${zarg}" = "false" && -f pandaJobData.out ]]; then
     log "Copying job description to pilot dir"
     cp pandaJobData.out pilot2/pandaJobData.out
   fi
@@ -462,19 +460,19 @@ function usage () {
 
 # wrapper args are explicit if used in the wrapper
 # additional pilot2 args are given via the -x option
-fflag=''
+zarg='true'
 qarg=''
 rarg=''
 sarg=''
 xarg=''
-while getopts 'hf:q:r:s:x:' item; do
+while getopts 'hz:q:r:s:x:' item; do
   case "${item}" in
     h) usage ;;
-    f) fflag="${OPTARG}" ;;    # push mode
-    s) sarg="${OPTARG}" ;;
-    q) qarg="${OPTARG}" ;;
-    r) rarg="${OPTARG}" ;;
-    x) xarg="${OPTARG}" ;;
+    f) zarg="${OPTARG}" ;; 
+    s) sarg="${OPTARG}"  ;;
+    q) qarg="${OPTARG}"  ;;
+    r) rarg="${OPTARG}"  ;;
+    x) xarg="${OPTARG}"  ;;
     *) log "Unexpected option ${flag}" ;;
   esac
 done
