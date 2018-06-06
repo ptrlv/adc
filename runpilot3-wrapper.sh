@@ -4,7 +4,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20180313a
+VERSION=20180606a
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -201,9 +201,9 @@ function get_pilot() {
   fi
 
   for url in ${PILOT_HTTP_SOURCES}; do
-    mkdir pilot3
-    curl --connect-timeout 30 --max-time 180 -sS $url | tar -C pilot3 -xzf -
-    if [ -f pilot3/pilot.py ]; then
+    mkdir pilot
+    curl --connect-timeout 30 --max-time 180 -sS $url | tar -C pilot -xzf -
+    if [ -f pilot/pilot.py ]; then
       log "Pilot download OK: ${url}"
       return 0
     fi
@@ -406,10 +406,10 @@ function main() {
   trap trap_handler SIGTERM SIGQUIT SIGSEGV SIGXCPU SIGUSR1 SIGBUS
   if [[ "${fflag}" = "false" && -f pandaJobData.out ]]; then
     log "Copying job description to pilot dir"
-    cp pandaJobData.out pilot3/pandaJobData.out
+    cp pandaJobData.out pilot/pandaJobData.out
   fi
-  cd $workdir/pilot3
-  log "cd $workdir/pilot3"
+  cd $workdir/pilot
+  log "cd $workdir/pilot"
 
   log "==== pilot stdout BEGIN ===="
   $cmd &
@@ -421,7 +421,7 @@ function main() {
   log "Pilot exit status: $pilotrc"
   
   log "---- Extract pandaIDs ----"
-  pandaidfile=${workdir}/pilot3/pandaIDs.out 
+  pandaidfile=${workdir}/pilot/pandaIDs.out 
   if [[ -f ${pandaidfile} ]]; then
     log "pandaIDs file found: ${pandaidfile}"
     cat ${pandaidfile}
