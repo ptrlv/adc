@@ -7,7 +7,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20180525-pilot2
+VERSION=20180713-pilot2
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -171,14 +171,11 @@ function check_agis() {
 
 function pilot_cmd() {
   if [[ -n "${PILOT_TYPE}" ]]; then
-    pilot_args="-a ${workdir} -i ${PILOT_TYPE}"
+    pilotargs="-a ${workdir} -i ${PILOT_TYPE} ${pilotargs}"
   else
-    pilot_args="-a ${workdir}"
+    pilotargs="-a ${workdir} ${pilotargs}"
   fi
-  if [[ -n "${xarg}" ]]; then
-    pilot_args="${pilot_args} ${xarg}"
-  fi
-  cmd="${pybin} pilot.py -q ${qarg} -r ${rarg} -s ${sarg} -z ${zarg} --pilot-user=ATLAS $pilot_args"
+  cmd="${pybin} pilot.py -q ${qarg} -r ${rarg} -s ${sarg} --pilot-user=ATLAS ${pilotargs}"
   echo ${cmd}
 }
 
@@ -447,39 +444,60 @@ function main() {
 }
 
 function usage () {
-  echo "Usage: $0 [-f false] -q <queue> -r <resource> -s <site> [-x <pilot_args>]"
+  echo "Usage: $0 -q <queue> -r <resource> -s <site> [<pilot_args>]"
   echo
-  echo "  -z,   if false, push mode (default is classic pull mode)"
   echo "  -q,   panda queue"
   echo "  -r,   panda resource"
   echo "  -s,   sitename for local setup"
-  echo "  -x,   additional pilot args"
   echo
   exit 1
 }
 
 # wrapper args are explicit if used in the wrapper
-# additional pilot2 args are given via the -x option
-zarg='true'
+# additional pilot2 args are passed as extra args
 qarg=''
 rarg=''
 sarg=''
-xarg=''
-while getopts 'hz:q:r:s:x:' item; do
-  case "${item}" in
-    h) usage ;;
-    z) zarg="${OPTARG}" ;; 
-    s) sarg="${OPTARG}"  ;;
-    q) qarg="${OPTARG}"  ;;
-    r) rarg="${OPTARG}"  ;;
-    x) xarg="${OPTARG}"  ;;
-    *) log "Unexpected option ${flag}" ;;
-  esac
+myargs="$@"
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+case $key in
+    -h|--help)
+    usage
+    shift
+    shift
+    ;;
+    -q)
+    qarg="$2"
+    shift
+    shift
+    ;;
+    -r)
+    rarg="$2"
+    shift
+    shift
+    ;;
+    -s)
+    sarg="$2"
+    shift
+    shift
+    ;;
+    *)
+    POSITIONAL+=("$1") # save it in an array for later
+    shift
+    ;;
+esac
 done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+pilotargs="$@"
 
 if [ -z "${sarg}" ]; then usage; exit 1; fi
 if [ -z "${qarg}" ]; then usage; exit 1; fi
 if [ -z "${rarg}" ]; then usage; exit 1; fi
 
 url="http://pandaserver.cern.ch:25085/cache/schedconfig/$sarg.all.json"
-main "$@"
+main "$myargs"
