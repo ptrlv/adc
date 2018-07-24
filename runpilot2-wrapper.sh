@@ -7,7 +7,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20180713-pilot2
+VERSION=20180724-pilot2
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -191,7 +191,7 @@ function get_pilot() {
       PILOT_TYPE=PT
     elif [[ $(($RANDOM%100)) = "0" ]]; then
       log "Release candidate pilot will be used"
-      PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2.tar.gz"
+      PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2-dev.tar.gz"
       PILOT_TYPE=RC
     else
       log "Normal production pilot will be used" 
