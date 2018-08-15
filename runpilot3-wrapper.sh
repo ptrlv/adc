@@ -20,6 +20,10 @@ function log() {
 }
 
 function get_workdir {
+  if [[ "${Fflag}" = "Nordugrid-ATLAS" ]]; then
+    echo "."
+    return
+  fi
   # If we have TMPDIR defined, then use this directory
   if [[ -n ${TMPDIR} ]]; then
     cd ${TMPDIR}
@@ -50,6 +54,10 @@ function check_python() {
 }
 
 function check_proxy() {
+  # For Nordugrid skip this check
+  if [[ "${Fflag}" = "Nordugrid-ATLAS" ]]; then
+    return
+  fi
   voms-proxy-info -all
   if [[ $? -ne 0 ]]; then
     log "FATAL: error running: voms-proxy-info -all"
@@ -60,10 +68,10 @@ function check_proxy() {
 }
 
 function check_cvmfs() {
-  if [ -d /cvmfs/atlas.cern.ch/repo/sw ]; then
+  if [ -d "${VO_ATLAS_SW_DIR}" ]; then
     log "Found atlas cvmfs software repository"
   else
-    log "ERROR: /cvmfs/atlas.cern.ch/repo/sw not found"
+    log "ERROR: ${VO_ATLAS_SW_DIR} not found"
     log "FATAL: Failed to find atlas cvmfs software repository. This is a bad site, exiting."
     err "FATAL: Failed to find atlas cvmfs software repository. This is a bad site, exiting."
     apfmon_fault 1
@@ -72,12 +80,12 @@ function check_cvmfs() {
 }
   
 function check_tags() {
-  if [ -e /cvmfs/atlas.cern.ch/repo/sw/tags ]; then
-    echo "sha256sum /cvmfs/atlas.cern.ch/repo/sw/tags"
-    sha256sum /cvmfs/atlas.cern.ch/repo/sw/tags
+  if [ -e ${VO_ATLAS_SW_DIR}/tags ]; then
+    echo "sha256sum ${VO_ATLAS_SW_DIR}/tags"
+    sha256sum ${VO_ATLAS_SW_DIR}/tags
   else
-    log "ERROR: tags file does not exist: /cvmfs/atlas.cern.ch/repo/sw/tags, exiting."
-    err "ERROR: tags file does not exist: /cvmfs/atlas.cern.ch/repo/sw/tags, exiting."
+    log "ERROR: tags file does not exist: ${VO_ATLAS_SW_DIR}/tags, exiting."
+    err "ERROR: tags file does not exist: ${VO_ATLAS_SW_DIR}/tags, exiting."
     apfmon_fault 1
     exit 1
   fi
@@ -85,12 +93,12 @@ function check_tags() {
 }
 
 function setup_alrb() {
-  if [ -d /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase ]; then
+  if [ -d "${ATLAS_LOCAL_ROOT_BASE}" ]; then
     log 'source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh'
     source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh
   else
-    log "ERROR: ALRB not found: /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase, exiting"
-    err "ERROR: ALRB not found: /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase, exiting"
+    log "ERROR: ALRB not found: ${ATLAS_LOCAL_ROOT_BASE}, exiting"
+    err "ERROR: ALRB not found: ${ATLAS_LOCAL_ROOT_BASE}, exiting"
     apfmon_fault 1
     exit 1
   fi
@@ -171,7 +179,10 @@ function check_agis() {
 }
 
 function pilot_cmd() {
-  if [[ -n "${PILOT_TYPE}" ]]; then
+
+  if [[ "${Fflag}" = "Nordugrid-ATLAS" ]]; then
+    pilot_args="$myargs"
+  elif [[ -n "${PILOT_TYPE}" ]]; then
     pilot_args="-d $workdir $myargs -i ${PILOT_TYPE} -G 1"
   else
     pilot_args="-d $workdir $myargs -G 1"
@@ -183,6 +194,18 @@ function pilot_cmd() {
 function get_pilot() {
   # N.B. an RC pilot is chosen once every 100 downloads for production and
   # ptest jobs use Paul's development release.
+
+  if [[ -f pilotcode.tar.gz ]]; then
+    mkdir pilot
+    tar -C pilot -xzf pilotcode.tar.gz
+    if [ -f pilot/pilot.py ]; then
+      log "Pilot extracted from existing tarball"
+      return 0
+    fi
+    log "ERROR: pilot extraction failed"
+    err "ERROR: pilot extraction failed"
+    return 1
+  fi
 
   if [ -v ${PILOT_HTTP_SOURCES} ]; then
     if echo $myargs | grep -- "-u ptest" > /dev/null; then 
@@ -269,6 +292,74 @@ function trap_handler() {
   wait
 }
 
+function nordugrid_pre_processing() {
+  if [ -f output.list ]; then
+    echo "Warning: output.list exists, this job may have been restarted"
+    rm -f output.list
+  fi
+  ln -s pilot/RunJob.py .
+  ln -s pilot/RunJobEvent.py .
+  ln -s pilot/VmPeak.py .
+  ln -s pilot/PILOTVERSION .
+  ln -s pilot/pilot.py .
+  export PYTHONPATH=$PYTHONPATH:`pwd`/pilot
+}
+
+function nordugrid_post_processing() {
+  if [ -f log_extracts.txt ] ; then
+    exitcode=`grep ExitCode log_extracts.txt |awk -F '=' '{print $2}'`
+    if [[ "$exitcode" == "" ]] ; then
+      log "ERROR: ExitCode not in log_extracts.txt - Unknown"
+    fi
+    mv logfile.xml  metadata.xml
+    if [ -f output.list ] ; then
+      # New movers: fix surltobeset with SURL from output.list
+      logfile=`cat output.list|awk '{print $2}'|sed -e 's#;[^/]*/#/#' -e 's#:checksumtype=.*$##'`
+      sed -i "s#att_value=\".*-surltobeset#att_value=\"$logfile#" metadata.xml
+      # If logtoOS was used, fix ddmendpoint_tobeset with CERN-PROD_LOGS
+      sed -i "s#<endpoint>.*ddmendpoint_tobeset<#<endpoint>CERN-PROD_LOGS<#" metadata.xml
+    fi
+  else
+    mv metadata-*.xml metadata.xml
+  fi
+
+  if [ ! -f metadata.xml ]; then
+    err "ERROR: Missing metadata.xml"
+    sleep 600
+    return 91
+  fi
+
+  if [ ! -f panda_node_struct.pickle ]; then
+    err "ERROR: Missing panda_node_struct.pickle"
+    return 92
+  fi
+
+  log "metadata"
+  cat metadata.xml
+  log "---------"
+
+  mv metadata.xml metadata-surl.xml
+
+  if [ ! -f output.list ]; then
+    err "ERROR: Missing output.list"
+    return 95
+  fi
+
+  log "output list"
+  cat output.list
+
+  # do a tarball:
+  tar -zcf jobSmallFiles.tgz metadata-surl.xml panda_node_struct.pickle || return 93
+
+  if [ ! -f jobSmallFiles.tgz ] ; then 
+    err "ERROR: jobSmallFiles.tgz does not exist"
+    return 94
+  fi
+
+  return 0
+}
+
+
 function main() {
   #
   # Fail early, fail often^W with useful diagnostics
@@ -342,10 +433,11 @@ function main() {
   
   echo "---- Enter workdir ----"
   workdir=$(get_workdir)
-  if [[ "$fflag" = "false" && -f pandaJobData.out ]]; then
+  if [[ "$fflag" = "false" && -f pandaJobData.out && ! -f ${workdir}/pandaJobData.out ]]; then
     log "Copying job description to working dir"
     cp pandaJobData.out $workdir/pandaJobData.out
   fi
+
   log "cd ${workdir}"
   cd ${workdir}
   echo
@@ -362,10 +454,10 @@ function main() {
   
   echo "---- JOB Environment ----"
   export SITE_NAME=${sflag}
-  export VO_ATLAS_SW_DIR='/cvmfs/atlas.cern.ch/repo/sw'
+  export VO_ATLAS_SW_DIR=${VO_ATLAS_SW_DIR:-/cvmfs/atlas.cern.ch/repo/sw}
   export ALRB_noGridMW=YES
   export ALRB_userMenuFmtSkip=YES
-  export ATLAS_LOCAL_ROOT_BASE='/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase'
+  export ATLAS_LOCAL_ROOT_BASE=${ATLAS_LOCAL_ROOT_BASE:-/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase}
   printenv | sort
   echo
   
@@ -404,12 +496,16 @@ function main() {
 
   echo "---- Ready to run pilot ----"
   trap trap_handler SIGTERM SIGQUIT SIGSEGV SIGXCPU SIGUSR1 SIGBUS
-  if [[ "${fflag}" = "false" && -f pandaJobData.out ]]; then
-    log "Copying job description to pilot dir"
-    cp pandaJobData.out pilot/pandaJobData.out
+  if [[ "${Fflag}" = "Nordugrid-ATLAS" ]]; then
+    nordugrid_pre_processing
+  else
+    if [[ "${fflag}" = "false" && -f pandaJobData.out ]]; then
+      log "Copying job description to pilot dir"
+      cp pandaJobData.out pilot/pandaJobData.out
+    fi
+    cd $workdir/pilot
+    log "cd $workdir/pilot"
   fi
-  cd $workdir/pilot
-  log "cd $workdir/pilot"
 
   log "==== pilot stdout BEGIN ===="
   $cmd &
@@ -442,9 +538,16 @@ function main() {
   log "STATUSCODE: ${scode}"
   apfmon_exiting ${scode} ${pandaids}
 
-  log "cleanup: rm -rf $workdir"
-  rm -fr $workdir
-  
+  if [[ "${Fflag}" = "Nordugrid-ATLAS" ]]; then
+    nordugrid_post_processing
+    if [[ $? -ne 0 ]]; then
+      exit $?
+    fi
+  else
+    log "cleanup: rm -rf $workdir"
+    rm -fr $workdir
+  fi
+
   if [[ -z ${SINGULARITY_INIT} ]]; then
     log "==== wrapper stdout END ===="
     err "==== wrapper stderr END ===="
@@ -458,7 +561,8 @@ pflag=''
 sflag=''
 uflag=''
 wflag=''
-while getopts 'f:h:p:s:u:w:' flag; do
+Fflag=''
+while getopts 'f:h:p:s:u:w:F:' flag; do
   case "${flag}" in
     f) fflag="${OPTARG}" ;;
     h) hflag="${OPTARG}" ;;
@@ -466,6 +570,7 @@ while getopts 'f:h:p:s:u:w:' flag; do
     s) sflag="${OPTARG}" ;;
     u) uflag="${OPTARG}" ;;
     w) wflag="${OPTARG}" ;;
+    F) Fflag="${OPTARG}" ;;
     A) aflag="${OPTARG}" ;;
     v) vflag="${OPTARG}" ;;
     o) oflag="${OPTARG}" ;;
