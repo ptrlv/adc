@@ -191,7 +191,7 @@ for (combined in errors) {
   lid = factory ":" sep[1]
   fmt = "curl --silent -d error=%s -d count=%s http://apfmon.lancs.ac.uk/api/label/%s \n"
   cmd = "curl --silent -d error="sep[2]" -d count="errors[combined]" http://apfmon.lancs.ac.uk/api/labels/"lid
-  if (sep[2] == "CREAM_DELEGATE" || sep[2] == "CREAM_JOB_REGISTER" || sep[2] == "CREAM_TRANSFER")
+  if (sep[2] == "CREAM_DELEGATE" || sep[2] == "CREAM_JOB_REGISTER" || sep[2] == "CREAM_TRANSFER" || sep[2] == "CREAM_BLAH" || sep[2] == "GLOBUS_FTP" || sep[2] == "PERIODIC_HOLD")
   {
     print sep[1] > "/tmp/apf-badness.txt"
   }
