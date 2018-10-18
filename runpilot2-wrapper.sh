@@ -7,7 +7,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20180724-pilot2
+VERSION=20181018-pilot2
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -98,23 +98,9 @@ function setup_alrb() {
 
 function setup_tools() {
   if [[ ${PILOT_TYPE} = "RC" ]]; then
-    log 'PILOT_TYPE=RC, lsetup "rucio testing" davix xrootd'
-    lsetup "rucio testing" davix xrootd
-    if [[ $? -ne 0 ]]; then
-      log 'FATAL: error running: lsetup "rucio testing" davix xrootd'
-      err 'FATAL: error running: lsetup "rucio testing" davix xrootd'
-      apfmon_fault 1
-      exit 1
-    fi
-  else
-    log 'lsetup rucio davix xrootd'
-    lsetup rucio davix xrootd 
-    if [[ $? -ne 0 ]]; then
-      log 'FATAL: error running "lsetup rucio davix xrootd", exiting.'
-      err 'FATAL: error running "lsetup rucio davix xrootd", exiting.'
-      apfmon_fault 1
-      exit 1
-    fi
+    log 'NOTE: rucio,davix,xrootd setup now done in local site setup'
+    log 'PILOT_TYPE=RC, setting ALRB_rucioVersion="testing"'
+    export ALRB_rucioVersion="testing"
   fi
 }
 
@@ -191,6 +177,10 @@ function get_pilot() {
       PILOT_TYPE=PT
     elif [[ $(($RANDOM%100)) = "0" ]]; then
       log "Release candidate pilot will be used"
+      PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2-dev.tar.gz"
+      PILOT_TYPE=RC
+    elif echo $myargs | grep -- "-i RC" > /dev/null; then
+      log "Release candidate pilot will be used due to wrapper cmdline option"
       PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2-dev.tar.gz"
       PILOT_TYPE=RC
     else
