@@ -106,25 +106,10 @@ function setup_alrb() {
 
 function setup_tools() {
   if [[ ${PILOT_TYPE} = "RC" ]]; then
-    log 'PILOT_TYPE=RC, lsetup "rucio testing" davix xrootd'
-    lsetup "rucio testing" davix xrootd
-    if [[ $? -ne 0 ]]; then
-      log 'FATAL: error running: lsetup "rucio testing" davix xrootd'
-      err 'FATAL: error running: lsetup "rucio testing" davix xrootd'
-      apfmon_fault 1
-      exit 1
-    fi
-  else
-    log 'lsetup rucio davix xrootd'
-    lsetup rucio davix xrootd 
-    if [[ $? -ne 0 ]]; then
-      log 'FATAL: error running "lsetup rucio davix xrootd", exiting.'
-      err 'FATAL: error running "lsetup rucio davix xrootd", exiting.'
-      apfmon_fault 1
-      exit 1
-    fi
+    log 'NOTE: rucio,davix,xrootd setup now done in local site setup'
+    log 'PILOT_TYPE=RC, setting ALRB_rucioVersion="testing"'
+    export ALRB_rucioVersion="testing"
   fi
-
 }
 
 # still needed? using VO_ATLAS_SW_DIR is specific to EGI
