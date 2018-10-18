@@ -201,6 +201,8 @@ function get_pilot() {
       PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode-rc.tar.gz"
       PILOT_TYPE=RC
     elif echo $myargs | grep -- "-i RC" > /dev/null; then
+      log "Release candidate pilot will be used due to wrapper cmdline option"
+      PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode-rc.tar.gz"
       PILOT_TYPE=RC
     else
       log "Normal production pilot will be used" 
