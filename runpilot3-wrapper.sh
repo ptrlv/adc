@@ -4,7 +4,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20180606a
+VERSION=20181010a
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -179,7 +179,6 @@ function check_agis() {
 }
 
 function pilot_cmd() {
-
   if [[ "${Fflag}" = "Nordugrid-ATLAS" ]]; then
     pilot_args="$myargs"
   elif [[ -n "${PILOT_TYPE}" ]]; then
@@ -216,6 +215,8 @@ function get_pilot() {
       log "Release candidate pilot will be used"
       PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode-rc.tar.gz"
       PILOT_TYPE=RC
+    elif echo $myargs | grep -- "-i RC" > /dev/null; then
+      PILOT_TYPE=RC
     else
       log "Normal production pilot will be used" 
       PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode-PICARD.tar.gz"
@@ -237,11 +238,6 @@ function get_pilot() {
 }
 
 function apfmon_running() {
-  if [ -z ${APFMON} ]; then
-    err "wrapper monitoring not configured"
-    return
-  fi
-
   out=$(curl -ksS --connect-timeout 10 --max-time 20 \
              -d state=running -d wrapper=$VERSION \
              ${APFMON}/jobs/${APFFID}:${APFCID})
@@ -255,11 +251,6 @@ function apfmon_running() {
 }
 
 function apfmon_exiting() {
-  if [ -z ${APFMON} ]; then
-    err "wrapper monitoring not configured"
-    return
-  fi
-
   out=$(curl -ksS --connect-timeout 10 --max-time 20 \
              -d state=exiting -d rc=$1 -d ids=$2 \
              ${APFMON}/jobs/${APFFID}:${APFCID})
@@ -579,4 +570,9 @@ while getopts 'f:h:p:s:u:w:F:' flag; do
 done
 
 url="http://pandaserver.cern.ch:25085/cache/schedconfig/$sflag.all.json"
+fabricmon="http://fabricmon.cern.ch/api"
+fabricmon="http://apfmon.lancs.ac.uk/api"
+if [ -z ${APFMON} ]; then
+  APFMON=${fabricmon}
+fi
 main "$@"
