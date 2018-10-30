@@ -167,9 +167,12 @@ function pilot_cmd() {
   if [[ "${Fflag}" = "Nordugrid-ATLAS" ]]; then
     pilot_args="$myargs"
   elif [[ -n "${PILOT_TYPE}" ]]; then
-    pilot_args="-d $workdir $myargs -i ${PILOT_TYPE} -G 1 -C ${cflag}"
+    pilot_args="-d $workdir $myargs -i ${PILOT_TYPE} -G 1"
   else
-    pilot_args="-d $workdir $myargs -G 1 -C ${cflag}"
+    pilot_args="-d $workdir $myargs -G 1"
+  fi
+  if [[ -z ${Cflag} ]]; then
+    pilot_args="${pilot_args} -C ${Cflag}"
   fi
   cmd="$pybin pilot.py $pilot_args"
   echo ${cmd}
@@ -532,7 +535,7 @@ function main() {
   exit 0
 }
 
-cflag=0
+Cflag=''
 fflag=''
 hflag=''
 pflag=''
@@ -542,7 +545,7 @@ wflag=''
 Fflag=''
 while getopts 'f:h:p:s:u:w:F:' flag; do
   case "${flag}" in
-    C) cflag="${OPTARG}" ;;
+    C) Cflag="${OPTARG}" ;;
     f) fflag="${OPTARG}" ;;
     h) hflag="${OPTARG}" ;;
     p) pflag="${OPTARG}" ;;
