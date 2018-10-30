@@ -4,7 +4,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20181031b
+VERSION=20181031c
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -507,7 +507,6 @@ function main() {
   pandaidfile=${workdir}/pilot/pandaIDs.out 
   if [[ -f ${pandaidfile} ]]; then
     log "pandaIDs file found: ${pandaidfile}"
-    cat ${pandaidfile}
     pandaids=$(paste -s -d, ${pandaidfile})
     log "pandaIDs: ${pandaids}"
   else
