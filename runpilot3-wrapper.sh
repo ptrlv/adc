@@ -408,7 +408,7 @@ function main() {
   fi
   myargs=$@
   echo "wrapper call: $0 $myargs"
-  log "wrapper getopts: -h $hflag -p $pflag -s $sflag -u $uflag -w $wflag -f $fflag"
+  log "wrapper getopts: -h $hflag -p $pflag -s $sflag -u $uflag -w $wflag -f $fflag -C ${Cflag}"
   echo
   
   echo "---- Enter workdir ----"
