@@ -4,7 +4,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20181031a
+VERSION=20181031b
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -178,7 +178,7 @@ function pilot_cmd() {
   else
     pilot_args="-d $workdir $myargs -G 1"
   fi
-  if [[ -z ${Cflag} ]]; then
+  if [[ -n ${Cflag} ]]; then
     pilot_args="${pilot_args} -C ${Cflag}"
   fi
   cmd="$pybin pilot.py $pilot_args"
