@@ -107,8 +107,15 @@ function setup_alrb() {
 function setup_tools() {
   log 'NOTE: rucio,davix,xrootd setup now done in local site setup'
   if [[ ${PILOT_TYPE} = "RC" ]]; then
-    log 'PILOT_TYPE=RC, setting ALRB_rucioVersion="testing"'
-    export ALRB_rucioVersion="testing"
+    log 'PILOT_TYPE=RC, setting ALRB_rucioVersion=testing'
+    export ALRB_rucioVersion=testing
+  fi
+  if [[ ${PILOT_TYPE} = "ALRB" ]]; then
+    log 'PILOT_TYPE=ALRB, setting ALRB env vars to testing'
+    export ALRB_asetupVersion=testing
+    export ALRB_xrootdVersion=testing
+    export ALRB_davixVersion=testing
+    export ALRB_rucioVersion=testing
   fi
 }
 
