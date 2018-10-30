@@ -4,7 +4,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20181010a
+VERSION=20181031a
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -105,8 +105,8 @@ function setup_alrb() {
 }
 
 function setup_tools() {
+  log 'NOTE: rucio,davix,xrootd setup now done in local site setup'
   if [[ ${PILOT_TYPE} = "RC" ]]; then
-    log 'NOTE: rucio,davix,xrootd setup now done in local site setup'
     log 'PILOT_TYPE=RC, setting ALRB_rucioVersion="testing"'
     export ALRB_rucioVersion="testing"
   fi
@@ -167,9 +167,9 @@ function pilot_cmd() {
   if [[ "${Fflag}" = "Nordugrid-ATLAS" ]]; then
     pilot_args="$myargs"
   elif [[ -n "${PILOT_TYPE}" ]]; then
-    pilot_args="-d $workdir $myargs -i ${PILOT_TYPE} -G 1"
+    pilot_args="-d $workdir $myargs -i ${PILOT_TYPE} -G 1 -C ${cflag}"
   else
-    pilot_args="-d $workdir $myargs -G 1"
+    pilot_args="-d $workdir $myargs -G 1 -C ${cflag}"
   fi
   cmd="$pybin pilot.py $pilot_args"
   echo ${cmd}
@@ -204,6 +204,10 @@ function get_pilot() {
       log "Release candidate pilot will be used due to wrapper cmdline option"
       PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode-rc.tar.gz"
       PILOT_TYPE=RC
+    elif echo $myargs | grep -- "-i ALRB" > /dev/null; then
+      log "ALRB pilot, normal production pilot will be used" 
+      PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode-PICARD.tar.gz"
+      PILOT_TYPE=ALRB
     else
       log "Normal production pilot will be used" 
       PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode-PICARD.tar.gz"
@@ -250,11 +254,6 @@ function apfmon_exiting() {
 }
 
 function apfmon_fault() {
-  if [ -z ${APFMON} ]; then
-    err "wrapper monitoring not configured"
-    return
-  fi
-
   out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=fault -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ $? -eq 0 ]]; then
     log $out
@@ -533,6 +532,7 @@ function main() {
   exit 0
 }
 
+cflag=0
 fflag=''
 hflag=''
 pflag=''
@@ -542,6 +542,7 @@ wflag=''
 Fflag=''
 while getopts 'f:h:p:s:u:w:F:' flag; do
   case "${flag}" in
+    C) cflag="${OPTARG}" ;;
     f) fflag="${OPTARG}" ;;
     h) hflag="${OPTARG}" ;;
     p) pflag="${OPTARG}" ;;
@@ -556,7 +557,7 @@ while getopts 'f:h:p:s:u:w:F:' flag; do
   esac
 done
 
-url="http://pandaserver.cern.ch:25085/cache/schedconfig/$sflag.all.json"
+url="http://pandaserver.cern.ch:25085/cache/schedconfig/${sflag}.all.json"
 fabricmon="http://fabricmon.cern.ch/api"
 fabricmon="http://apfmon.lancs.ac.uk/api"
 if [ -z ${APFMON} ]; then
