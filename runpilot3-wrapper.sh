@@ -119,7 +119,6 @@ function setup_tools() {
   fi
 }
 
-# still needed? using VO_ATLAS_SW_DIR is specific to EGI
 function setup_local() {
   log "Looking for ${VO_ATLAS_SW_DIR}/local/setup.sh"
   if [[ -f ${VO_ATLAS_SW_DIR}/local/setup.sh ]]; then
