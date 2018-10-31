@@ -1,7 +1,9 @@
 #!/bin/bash
 #
-# pilot wrapper used at CERN central pilot factories
+# ATLAS ADC pilot wrapper (pilot1)
 #
+#
+
 # https://google.github.io/styleguide/shell.xml
 
 VERSION=20181031a
