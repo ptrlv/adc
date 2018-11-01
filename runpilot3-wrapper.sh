@@ -6,7 +6,7 @@
 
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20181031a
+VERSION=20181101a
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -545,6 +545,7 @@ function main() {
 Cflag=''
 fflag=''
 hflag=''
+iflag=''
 pflag=''
 sflag=''
 uflag=''
@@ -555,6 +556,7 @@ while getopts 'f:h:p:s:u:w:F:' flag; do
     C) Cflag="${OPTARG}" ;;
     f) fflag="${OPTARG}" ;;
     h) hflag="${OPTARG}" ;;
+    i) iflag="${OPTARG}" ;;
     p) pflag="${OPTARG}" ;;
     s) sflag="${OPTARG}" ;;
     u) uflag="${OPTARG}" ;;
