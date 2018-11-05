@@ -7,7 +7,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20181018-pilot2
+VERSION=20181105-pilot2
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -332,7 +332,7 @@ function main() {
   
   echo "---- Enter workdir ----"
   workdir=$(get_workdir)
-  if [[ "${zarg}" = "false" && -f pandaJobData.out ]]; then
+  if [[ -f pandaJobData.out ]]; then
     log "Copying job description to working dir"
     cp pandaJobData.out $workdir/pandaJobData.out
   fi
@@ -393,7 +393,7 @@ function main() {
 
   echo "---- Ready to run pilot ----"
   trap trap_handler SIGTERM SIGQUIT SIGSEGV SIGXCPU SIGUSR1 SIGBUS
-  if [[ "${zarg}" = "false" && -f pandaJobData.out ]]; then
+  if [[ -f pandaJobData.out ]]; then
     log "Copying job description to pilot dir"
     cp pandaJobData.out pilot2/pandaJobData.out
   fi
