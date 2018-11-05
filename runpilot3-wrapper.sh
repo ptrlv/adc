@@ -6,7 +6,7 @@
 
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20181101a
+VERSION=20181105a
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -70,6 +70,7 @@ function check_proxy() {
 }
 
 function check_cvmfs() {
+  export VO_ATLAS_SW_DIR=${VO_ATLAS_SW_DIR:-/cvmfs/atlas.cern.ch/repo/sw}
   if [ -d "${VO_ATLAS_SW_DIR}" ]; then
     log "Found atlas cvmfs software repository"
   else
@@ -95,6 +96,9 @@ function check_tags() {
 }
 
 function setup_alrb() {
+  export ATLAS_LOCAL_ROOT_BASE=${ATLAS_LOCAL_ROOT_BASE:-/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase}
+  export ALRB_noGridMW=YES
+  export ALRB_userMenuFmtSkip=YES
   if [ -d "${ATLAS_LOCAL_ROOT_BASE}" ]; then
     log 'source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh'
     source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh
@@ -122,6 +126,7 @@ function setup_tools() {
 }
 
 function setup_local() {
+  export SITE_NAME=${sflag}
   log "Looking for ${VO_ATLAS_SW_DIR}/local/setup.sh"
   if [[ -f ${VO_ATLAS_SW_DIR}/local/setup.sh ]]; then
     echo "Sourcing ${VO_ATLAS_SW_DIR}/local/setup.sh -s $sflag"
@@ -440,15 +445,6 @@ function main() {
   fi
   echo
   
-  echo "---- JOB Environment ----"
-  export SITE_NAME=${sflag}
-  export VO_ATLAS_SW_DIR=${VO_ATLAS_SW_DIR:-/cvmfs/atlas.cern.ch/repo/sw}
-  export ALRB_noGridMW=YES
-  export ALRB_userMenuFmtSkip=YES
-  export ATLAS_LOCAL_ROOT_BASE=${ATLAS_LOCAL_ROOT_BASE:-/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase}
-  printenv | sort
-  echo
-  
   echo "---- Shell process limits ----"
   ulimit -a
   echo
@@ -494,6 +490,10 @@ function main() {
     cd $workdir/pilot
     log "cd $workdir/pilot"
   fi
+
+  echo "---- JOB Environment ----"
+  printenv | sort
+  echo
 
   log "==== pilot stdout BEGIN ===="
   $cmd &
@@ -551,7 +551,7 @@ sflag=''
 uflag=''
 wflag=''
 Fflag=''
-while getopts 'f:h:p:s:u:w:F:' flag; do
+while getopts 'f:h:i:p:s:u:w:F:' flag; do
   case "${flag}" in
     C) Cflag="${OPTARG}" ;;
     f) fflag="${OPTARG}" ;;
