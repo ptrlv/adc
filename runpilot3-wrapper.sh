@@ -212,7 +212,7 @@ function get_pilot() {
       log "This is a ptest pilot. Development pilot will be used"
       PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilotcode-dev.tar.gz"
       PILOT_TYPE=PT
-    elif [ $(($RANDOM%1)) = "0" ] && [ "$uflag" == "" ] && [ "$iflag" == "" ]; then
+    elif [ $(($RANDOM%100)) = "0" ] && [ "$uflag" == "" ] && [ "$iflag" == "" ]; then
       log "Release candidate pilot will be used"
       PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode-rc.tar.gz"
       PILOT_TYPE=RC
