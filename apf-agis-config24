@@ -10,7 +10,7 @@ from urllib import urlopen
 import sys
 import json
 
-VERSION=20170502
+VERSION=20181112
 
 def main():
 
@@ -128,6 +128,10 @@ specified cloud and activity type.
             
             for q in d[key]['queues']:
                 label = '%s-%s' % (d[key]['nickname'], q['ce_queue_id'])
+                if label in badset:
+                    print
+                    print "# Warning, queue %s found in /tmp/apf-badness.txt" % label
+                    continue
                 if q['ce_state'] != 'ACTIVE':
                     print
                     print "# Excluded, not 'ACTIVE': %s/%s (ce_state = %s)" % (key, q['ce_name'], q['ce_state'])
@@ -137,10 +141,6 @@ specified cloud and activity type.
                     print "# Warning, in 'maintenance': %s/%s (ce_status = %s)" % (key, q['ce_name'], q['ce_status'])
                     continue
                 # ce_queue_status now ignored
-                if label in badset:
-                    print
-                    print "# Warning, queue %s found in /tmp/apf-badness.txt" % label
-                    continue
                 
 
                 gramqueue = None 
