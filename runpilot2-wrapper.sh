@@ -60,6 +60,7 @@ function check_proxy() {
 }
 
 function check_cvmfs() {
+  export VO_ATLAS_SW_DIR=${VO_ATLAS_SW_DIR:-/cvmfs/atlas.cern.ch/repo/sw}
   if [ -d /cvmfs/atlas.cern.ch/repo/sw ]; then
     log "Found atlas cvmfs software repository"
   else
@@ -85,6 +86,9 @@ function check_tags() {
 }
 
 function setup_alrb() {
+  export ATLAS_LOCAL_ROOT_BASE=${ATLAS_LOCAL_ROOT_BASE:-/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase}
+  export ALRB_noGridMW=YES
+  export ALRB_userMenuFmtSkip=YES
   if [ -d /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase ]; then
     log 'source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh'
     source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh
@@ -97,15 +101,23 @@ function setup_alrb() {
 }
 
 function setup_tools() {
+  log 'NOTE: rucio,davix,xrootd setup now done in local site setup'
   if [[ ${PILOT_TYPE} = "RC" ]]; then
-    log 'NOTE: rucio,davix,xrootd setup now done in local site setup'
-    log 'PILOT_TYPE=RC, setting ALRB_rucioVersion="testing"'
-    export ALRB_rucioVersion="testing"
+    log 'PILOT_TYPE=RC, setting ALRB_rucioVersion=testing'
+    export ALRB_rucioVersion=testing
+  fi
+  if [[ ${PILOT_TYPE} = "ALRB" ]]; then
+    log 'PILOT_TYPE=ALRB, setting ALRB env vars to testing'
+    export ALRB_asetupVersion=testing
+    export ALRB_xrootdVersion=testing
+    export ALRB_davixVersion=testing
+    export ALRB_rucioVersion=testing
   fi
 }
 
 # still needed? using VO_ATLAS_SW_DIR is specific to EGI
 function setup_local() {
+  export SITE_NAME=${sflag}
   log "Looking for ${VO_ATLAS_SW_DIR}/local/setup.sh"
   if [[ -f ${VO_ATLAS_SW_DIR}/local/setup.sh ]]; then
     log "Sourcing ${VO_ATLAS_SW_DIR}/local/setup.sh -s $sarg"
@@ -183,6 +195,10 @@ function get_pilot() {
       log "Release candidate pilot will be used due to wrapper cmdline option"
       PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2-dev.tar.gz"
       PILOT_TYPE=RC
+    elif echo $myargs | grep -- "-i ALRB" > /dev/null; then
+      log "ALRB pilot, normal production pilot will be used" 
+      PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2.tar.gz"
+      PILOT_TYPE=ALRB
     else
       log "Normal production pilot will be used" 
       PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2.tar.gz"
@@ -400,6 +416,10 @@ function main() {
   cd $workdir/pilot2
   log "cd $workdir/pilot2"
 
+  echo "---- JOB Environment ----"
+  printenv | sort
+  echo
+
   log "==== pilot stdout BEGIN ===="
   $cmd &
   pilotpid=$!
@@ -489,5 +509,11 @@ if [ -z "${sarg}" ]; then usage; exit 1; fi
 if [ -z "${qarg}" ]; then usage; exit 1; fi
 if [ -z "${rarg}" ]; then usage; exit 1; fi
 
-url="http://pandaserver.cern.ch:25085/cache/schedconfig/$sarg.all.json"
+
+url="http://pandaserver.cern.ch:25085/cache/schedconfig/${sflag}.all.json"
+fabricmon="http://fabricmon.cern.ch/api"
+fabricmon="http://apfmon.lancs.ac.uk/api"
+if [ -z ${APFMON} ]; then
+  APFMON=${fabricmon}
+fi
 main "$myargs"
