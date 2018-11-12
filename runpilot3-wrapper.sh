@@ -212,15 +212,15 @@ function get_pilot() {
       log "This is a ptest pilot. Development pilot will be used"
       PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilotcode-dev.tar.gz"
       PILOT_TYPE=PT
-    elif [ $(($RANDOM%100)) = "0" ]; then
+    elif [ $(($RANDOM%100)) = "0" ] && [ "$uflag" == "" ] && [ "$iflag" == "" ]; then
       log "Release candidate pilot will be used"
       PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode-rc.tar.gz"
       PILOT_TYPE=RC
-    elif echo $myargs | grep -- "-i RC" > /dev/null; then
+    elif [ "$iflag" == "RC" ] || [ "$uflag" == "rc_test" ]; then
       log "Release candidate pilot will be used due to wrapper cmdline option"
       PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode-rc.tar.gz"
       PILOT_TYPE=RC
-    elif echo $myargs | grep -- "-i ALRB" > /dev/null; then
+    elif [ "$iflag" == "ALRB" ]; then
       log "ALRB pilot, normal production pilot will be used" 
       PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode-PICARD.tar.gz"
       PILOT_TYPE=ALRB
@@ -421,7 +421,7 @@ function main() {
   fi
   myargs=$@
   echo "wrapper call: $0 $myargs"
-  log "wrapper getopts: -h $hflag -p $pflag -s $sflag -u $uflag -w $wflag -f $fflag -C ${Cflag}"
+  log "wrapper getopts: -h $hflag -p $pflag -s $sflag -u $uflag -w $wflag -f $fflag -C ${Cflag} -i ${iflag}"
   echo
   
   echo "---- Enter workdir ----"
@@ -551,7 +551,7 @@ sflag=''
 uflag=''
 wflag=''
 Fflag=''
-while getopts 'f:h:i:p:s:u:w:F:' flag; do
+while getopts 'C:f:h:i:p:s:u:w:F:' flag; do
   case "${flag}" in
     C) Cflag="${OPTARG}" ;;
     f) fflag="${OPTARG}" ;;
