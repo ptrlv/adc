@@ -6,7 +6,7 @@
 
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20181112a
+VERSION=20181121a
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -95,10 +95,36 @@ function check_tags() {
   echo
 }
 
+
+function check_vomsproxyinfo() {
+  out=$(xvoms-proxy-info --version 2>/dev/null)
+  if [[ $? -eq 0 ]]; then
+    log "Check version: ${out}"
+    return 0
+  else
+    log "voms-proxy-info not found"
+    return 1
+  fi
+
+}
+
+function check_arcproxy() {
+  out=$(arcproxy --version 2>/dev/null)
+  if [[ $? -eq 0 ]]; then
+    log "Check version: ${out}"
+    return 0
+  else
+    log "arcproxy not found"
+    return 1
+  fi
+}
+
 function setup_alrb() {
   export ATLAS_LOCAL_ROOT_BASE=${ATLAS_LOCAL_ROOT_BASE:-/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase}
-  export ALRB_noGridMW=YES
   export ALRB_userMenuFmtSkip=YES
+  export ALRB_noGridMW=NO
+  check_vomsproxyinfo || check_arcproxy && export ALRB_noGridMW=YES
+
   if [ -d "${ATLAS_LOCAL_ROOT_BASE}" ]; then
     log 'source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh'
     source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh
