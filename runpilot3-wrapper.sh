@@ -97,7 +97,7 @@ function check_tags() {
 
 
 function check_vomsproxyinfo() {
-  out=$(xvoms-proxy-info --version 2>/dev/null)
+  out=$(voms-proxy-info --version 2>/dev/null)
   if [[ $? -eq 0 ]]; then
     log "Check version: ${out}"
     return 0
