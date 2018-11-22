@@ -282,7 +282,7 @@ function apfmon_running() {
     err "ARGS: -d state=running -d wrapper=$VERSION ${APFMON}/jobs/${APFFID}:${APFCID}"
   fi
   # devel msg
-  echo "wrapper1 ${sflag} ${APFFID}:${APFCID} running" > /dev/udp/148.88.67.14/28527
+  echo "wrapper1 ${VERSION} ${sflag} ${APFFID}:${APFCID} running" > /dev/udp/148.88.67.14/28527
 }
 
 function apfmon_exiting() {
@@ -295,8 +295,6 @@ function apfmon_exiting() {
     err "WARNING: wrapper monitor"
     err "ARGS: -d state=exiting -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}"
   fi
-  # devel msg
-  echo "wrapper1 ${sflag} ${APFFID}:${APFCID} exiting" > /dev/udp/148.88.67.14/28527
 }
 
 function apfmon_fault() {
@@ -307,7 +305,6 @@ function apfmon_fault() {
     err "WARNING: wrapper monitor"
     err "ARGS: -d state=fault -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}"
   fi
-  echo "wrapper1 ${sflag} ${APFFID}:${APFCID} fault" > /dev/udp/148.88.67.14/28527
 }
 
 function trap_handler() {
