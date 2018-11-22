@@ -126,8 +126,8 @@ function setup_alrb() {
   check_vomsproxyinfo || check_arcproxy && export ALRB_noGridMW=YES
 
   if [ -d "${ATLAS_LOCAL_ROOT_BASE}" ]; then
-    log 'source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh'
-    source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh
+    log 'source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh --quiet'
+    source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh --quiet
   else
     log "ERROR: ALRB not found: ${ATLAS_LOCAL_ROOT_BASE}, exiting"
     err "ERROR: ALRB not found: ${ATLAS_LOCAL_ROOT_BASE}, exiting"
