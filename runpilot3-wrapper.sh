@@ -390,6 +390,9 @@ function sortie() {
 
   duration=$(( $(date +%s) - ${starttime} ))
   echo "${state} ${duration} ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
+  log "wrapper ${state} ec=$ec, duration=${duration}"
+  log "==== wrapper stdout END ===="
+  err "==== wrapper stderr END ===="
   exit $ec
 }
 
@@ -438,8 +441,6 @@ function main() {
       log "singularity return code: $?"
       log '==== singularity stdout END ===='
       err '==== singularity stderr END ===='
-      log "==== wrapper stdout END ===="
-      err "==== wrapper stderr END ===="
       sortie 0
     else
       log 'Will NOT use singularity, at least not from the wrapper'
