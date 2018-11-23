@@ -6,7 +6,7 @@
 
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20181122a
+VERSION=20181123a
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
