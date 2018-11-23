@@ -271,7 +271,7 @@ function get_pilot() {
 }
 
 function apfmon_running() {
-  echo "running ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
+  echo -n "running 0 ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
   out=$(curl -ksS --connect-timeout 10 --max-time 20 \
              -d state=running -d wrapper=$VERSION \
              ${APFMON}/jobs/${APFFID}:${APFCID})
@@ -389,7 +389,7 @@ function sortie() {
   fi
 
   duration=$(( $(date +%s) - ${starttime} ))
-  echo "${state} ${duration} ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
+  echo -n "${state} ${duration} ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
   log "wrapper ${state} ec=$ec, duration=${duration}"
   log "==== wrapper stdout END ===="
   err "==== wrapper stderr END ===="
