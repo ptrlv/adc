@@ -51,7 +51,7 @@ function check_python() {
       log "FATAL: Failed to find a compatible python, exiting"
       err "FATAL: Failed to find a compatible python, exiting"
       apfmon_fault 1
-      exit 1
+      sortie 1
     fi
 }
 
@@ -65,7 +65,7 @@ function check_proxy() {
     log "FATAL: error running: voms-proxy-info -all"
     err "FATAL: error running: voms-proxy-info -all"
     apfmon_fault 1
-    exit 1
+    sortie 1
   fi
 }
 
@@ -78,7 +78,7 @@ function check_cvmfs() {
     log "FATAL: Failed to find atlas cvmfs software repository. This is a bad site, exiting."
     err "FATAL: Failed to find atlas cvmfs software repository. This is a bad site, exiting."
     apfmon_fault 1
-    exit 1
+    sortie 1
   fi
 }
   
@@ -90,7 +90,7 @@ function check_tags() {
     log "ERROR: tags file does not exist: ${VO_ATLAS_SW_DIR}/tags, exiting."
     err "ERROR: tags file does not exist: ${VO_ATLAS_SW_DIR}/tags, exiting."
     apfmon_fault 1
-    exit 1
+    sortie 1
   fi
   echo
 }
@@ -132,7 +132,7 @@ function setup_alrb() {
     log "ERROR: ALRB not found: ${ATLAS_LOCAL_ROOT_BASE}, exiting"
     err "ERROR: ALRB not found: ${ATLAS_LOCAL_ROOT_BASE}, exiting"
     apfmon_fault 1
-    exit 1
+    sortie 1
   fi
 }
 
@@ -271,6 +271,7 @@ function get_pilot() {
 }
 
 function apfmon_running() {
+  echo "running ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
   out=$(curl -ksS --connect-timeout 10 --max-time 20 \
              -d state=running -d wrapper=$VERSION \
              ${APFMON}/jobs/${APFFID}:${APFCID})
@@ -281,8 +282,6 @@ function apfmon_running() {
     err "wrapper monitor warning"
     err "ARGS: -d state=running -d wrapper=$VERSION ${APFMON}/jobs/${APFFID}:${APFCID}"
   fi
-  # devel msg
-  echo "wrapper1 ${VERSION} ${sflag} ${APFFID}:${APFCID} running" > /dev/udp/148.88.67.14/28527
 }
 
 function apfmon_exiting() {
@@ -381,6 +380,19 @@ function nordugrid_post_processing() {
 }
 
 
+function sortie() {
+  ec=$1
+  if [[ $ec -eq 0 ]]; then
+    state=exiting
+  else
+    state=fault
+  fi
+
+  duration=$(( $(date +%s) - ${starttime} ))
+  echo "${state} ${duration} ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
+  exit $ec
+}
+
 function main() {
   #
   # Fail early, fail often^W with useful diagnostics
@@ -428,7 +440,7 @@ function main() {
       err '==== singularity stderr END ===='
       log "==== wrapper stdout END ===="
       err "==== wrapper stderr END ===="
-      exit 0
+      sortie 0
     else
       log 'Will NOT use singularity, at least not from the wrapper'
     fi
@@ -469,7 +481,7 @@ function main() {
     log "FATAL: failed to retrieve pilot code"
     err "FATAL: failed to retrieve pilot code"
     apfmon_fault 1
-    exit 1
+    sortie 1
   fi
   echo
   
@@ -556,7 +568,7 @@ function main() {
   if [[ "${Fflag}" = "Nordugrid-ATLAS" ]]; then
     nordugrid_post_processing
     if [[ $? -ne 0 ]]; then
-      exit $?
+      sortie $?
     fi
   else
     log "cleanup: rm -rf $workdir"
@@ -567,9 +579,10 @@ function main() {
     log "==== wrapper stdout END ===="
     err "==== wrapper stderr END ===="
   fi
-  exit 0
+  sortie 0
 }
 
+starttime=$(date +%s)
 Cflag=''
 fflag=''
 hflag=''
