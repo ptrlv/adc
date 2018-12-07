@@ -62,8 +62,8 @@ function check_proxy() {
   fi
   voms-proxy-info -all
   if [[ $? -ne 0 ]]; then
-    log "FATAL: error running: voms-proxy-info -all"
-    err "FATAL: error running: voms-proxy-info -all"
+    log "WARNING: error running: voms-proxy-info -all"
+    err "WARNING: error running: voms-proxy-info -all"
     arc-proxy -I
     if [[ $? -ne 0 ]]; then
       log "FATAL: error running: arcproxy -I"
