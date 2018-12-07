@@ -70,6 +70,7 @@ function check_proxy() {
       err "FATAL: error running: arcproxy -I"
       apfmon_fault 1
       sortie 1
+    fi
   fi
 }
 
