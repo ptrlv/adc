@@ -6,7 +6,7 @@
 
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20181126a
+VERSION=20181207a
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -64,8 +64,12 @@ function check_proxy() {
   if [[ $? -ne 0 ]]; then
     log "FATAL: error running: voms-proxy-info -all"
     err "FATAL: error running: voms-proxy-info -all"
-    apfmon_fault 1
-    sortie 1
+    arc-proxy -I
+    if [[ $? -ne 0 ]]; then
+      log "FATAL: error running: arcproxy -I"
+      err "FATAL: error running: arcproxy -I"
+      apfmon_fault 1
+      sortie 1
   fi
 }
 
