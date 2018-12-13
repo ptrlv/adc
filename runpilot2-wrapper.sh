@@ -20,14 +20,16 @@ function log() {
 }
 
 function get_workdir {
-  # If we have TMPDIR defined, then use this directory
+  # If we have TMPDIR defined, then use this directory                                                                                                 
   if [[ -n ${TMPDIR} ]]; then
     cd ${TMPDIR}
   fi
   templ=$(pwd)/condorg_XXXXXXXX
   temp=$(mktemp -d $templ)
+  [ -n ${targ} ] && ln -s ${targ} ${temp}
   echo ${temp}
 }
+
 
 function check_python() {
     pybin=$(which python)
@@ -187,6 +189,9 @@ function get_pilot() {
       log "This is a ptest pilot. Development pilot will be used"
       PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2-dev.tar.gz"
       PILOT_TYPE=PT
+    elif echo $myargs | grep -- "-t" > /dev/null; then 
+      log "The local development pilot will be used"
+      TEST_SETUP=1
     elif [[ $(($RANDOM%100)) = "0" ]]; then
       log "Release candidate pilot will be used"
       PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2-dev.tar.gz"
@@ -206,6 +211,8 @@ function get_pilot() {
     fi
   fi
 
+  [ $TEST_SETUP == 1 ] && return 0 
+   
   for piloturl in ${PILOT_HTTP_SOURCES}; do
     curl --connect-timeout 30 --max-time 180 -sS ${piloturl} | tar -xzf -
     if [ -f pilot2/pilot.py ]; then
@@ -443,9 +450,13 @@ function main() {
   find ${workdir} -name pandaIDs.out -exec cat {} \;
   echo
 
-  log "cleanup: rm -rf $workdir"
-  rm -fr $workdir
-  
+  if [ $TEST_SETUP != 1 ]; then 
+      log "cleanup: rm -rf $workdir"
+      rm -fr $workdir
+  else 
+      log "Test setup not cleaning"
+  fi
+
   if [[ -z ${SINGULARITY_INIT} ]]; then
     log "==== wrapper stdout END ===="
     err "==== wrapper stderr END ===="
@@ -459,6 +470,7 @@ function usage () {
   echo "  -q,   panda queue"
   echo "  -r,   panda resource"
   echo "  -s,   sitename for local setup"
+  echo "  -t,   use local development pilot, requires location of pilot2 directory. It skips the cleanup at the end"
   echo
   exit 1
 }
@@ -468,6 +480,7 @@ function usage () {
 qarg=''
 rarg=''
 sarg=''
+targ=''
 myargs="$@"
 
 POSITIONAL=()
@@ -492,6 +505,11 @@ case $key in
     ;;
     -s)
     sarg="$2"
+    shift
+    shift
+    ;;
+    -t)
+    targ="$2"
     shift
     shift
     ;;
