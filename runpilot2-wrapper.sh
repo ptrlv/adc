@@ -7,7 +7,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20181105-pilot2
+VERSION=20181218-pilot2
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -47,7 +47,7 @@ function check_python() {
       log "FATAL: Failed to find a compatible python, exiting"
       err "FATAL: Failed to find a compatible python, exiting"
       apfmon_fault 1
-      exit 1
+      sortie 1
     fi
 }
 
@@ -57,7 +57,7 @@ function check_proxy() {
     log "FATAL: error running: voms-proxy-info -all"
     err "FATAL: error running: voms-proxy-info -all"
     apfmon_fault 1
-    exit 1
+    sortie 1
   fi
 }
 
@@ -70,7 +70,7 @@ function check_cvmfs() {
     log "FATAL: Failed to find atlas cvmfs software repository. This is a bad site, exiting."
     err "FATAL: Failed to find atlas cvmfs software repository. This is a bad site, exiting."
     apfmon_fault 1
-    exit 1
+    sortie 1
   fi
 }
   
@@ -82,7 +82,7 @@ function check_tags() {
     log "ERROR: tags file does not exist: /cvmfs/atlas.cern.ch/repo/sw/tags, exiting."
     err "ERROR: tags file does not exist: /cvmfs/atlas.cern.ch/repo/sw/tags, exiting."
     apfmon_fault 1
-    exit 1
+    sortie 1
   fi
   echo
 }
@@ -98,7 +98,7 @@ function setup_alrb() {
     log "ERROR: ALRB not found: /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase, exiting"
     err "ERROR: ALRB not found: /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase, exiting"
     apfmon_fault 1
-    exit 1
+    sortie 1
   fi
 }
 
@@ -197,15 +197,15 @@ function get_pilot() {
       PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2-dev.tar.gz"
       PILOT_TYPE=RC
     elif echo $myargs | grep -- "-i RC" > /dev/null; then
-      log "Release candidate pilot will be used due to wrapper cmdline option"
+      log "Release candidate pilot2 will be used due to wrapper cmdline option"
       PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2-dev.tar.gz"
       PILOT_TYPE=RC
     elif echo $myargs | grep -- "-i ALRB" > /dev/null; then
-      log "ALRB pilot, normal production pilot will be used" 
+      log "ALRB pilot, normal production pilot2 will be used" 
       PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2.tar.gz"
       PILOT_TYPE=ALRB
     else
-      log "Normal production pilot will be used" 
+      log "Normal production pilot2 will be used" 
       PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2.tar.gz"
       PILOT_TYPE=PR
     fi
@@ -226,11 +226,7 @@ function get_pilot() {
 }
 
 function apfmon_running() {
-  if [ -z ${APFMON} ]; then
-    err "wrapper monitoring not configured"
-    return
-  fi
-
+  echo -n "running 0 ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
   out=$(curl -ksS --connect-timeout 10 --max-time 20 \
              -d state=running -d wrapper=$VERSION \
              ${APFMON}/jobs/${APFFID}:${APFCID})
@@ -239,16 +235,11 @@ function apfmon_running() {
     err $out
   else
     err "wrapper monitor warning"
-    err "ARGS: -d state=exiting -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}"
+    err "ARGS: -d state=running -d wrapper=$VERSION ${APFMON}/jobs/${APFFID}:${APFCID}"
   fi
 }
 
 function apfmon_exiting() {
-  if [ -z ${APFMON} ]; then
-    err "wrapper monitoring not configured"
-    return
-  fi
-
   out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=exiting -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ $? -eq 0 ]]; then
     log $out
@@ -278,6 +269,23 @@ function trap_handler() {
   kill -s $1 $pilotpid
   wait
 }
+
+function sortie() {
+  ec=$1
+  if [[ $ec -eq 0 ]]; then
+    state=exiting
+  else
+    state=fault
+  fi
+
+  duration=$(( $(date +%s) - ${starttime} ))
+  echo -n "${state} ${duration} ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
+  log "wrapper ${state} ec=$ec, duration=${duration}"
+  log "==== wrapper stdout END ===="
+  err "==== wrapper stderr END ===="
+  exit $ec
+}
+
 
 function main() {
   #
@@ -369,7 +377,7 @@ function main() {
     log "FATAL: failed to retrieve pilot code"
     err "FATAL: failed to retrieve pilot code"
     apfmon_fault 1
-    exit 1
+    sortie 1
   fi
   echo
   
