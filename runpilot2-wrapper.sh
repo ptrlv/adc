@@ -7,7 +7,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20181218-pilot2
+VERSION=20190114-pilot2
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
