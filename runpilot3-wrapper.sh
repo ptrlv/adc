@@ -6,7 +6,7 @@
 
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20181213a
+VERSION=20190111a
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -503,12 +503,12 @@ function main() {
   check_cvmfs
   echo
 
-  echo "---- Setup ALRB ----"
-  setup_alrb
-  echo
-
   echo "---- Setup tools ----"
   setup_tools
+  echo
+
+  echo "---- Setup ALRB ----"
+  setup_alrb
   echo
 
   echo "---- Setup local ATLAS ----"
