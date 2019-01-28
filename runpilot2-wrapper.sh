@@ -7,7 +7,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20190114-pilot2
+VERSION=20190128-pilot2
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -145,7 +145,7 @@ function check_singularity() {
 }
 
 function get_singopts() {
-  container_opts=$(curl --silent $url | grep container_options | grep -v null)
+  container_opts=$(curl --silent $agisurl | grep container_options | grep -v null)
   if [[ $? -eq 0 ]]; then
     singopts=$(echo $container_opts | awk -F"\"" '{print $4}')
     log "AGIS container_options found"
@@ -159,7 +159,7 @@ function get_singopts() {
 }
 
 function check_agis() {
-  result=$(curl --silent $url | grep container_type | grep 'singularity:wrapper')
+  result=$(curl --silent $agisurl | grep container_type | grep 'singularity:wrapper')
   if [[ $? -eq 0 ]]; then
     log "AGIS container_type: singularity:wrapper found"
     return 0
@@ -479,6 +479,7 @@ function usage () {
   echo "  -r,   panda resource"
   echo "  -s,   sitename for local setup"
   echo "  -t,   use local development pilot, requires location of pilot2 directory. It skips the cleanup at the end"
+  echo "  --piloturl, URL of pilot code tarball, default is http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2.tar.gz
   echo
   exit 1
 }
@@ -489,6 +490,7 @@ qarg=''
 rarg=''
 sarg=''
 targ=''
+piloturl='http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2.tar.gz'
 myargs="$@"
 
 POSITIONAL=()
@@ -498,6 +500,11 @@ key="$1"
 case $key in
     -h|--help)
     usage
+    shift
+    shift
+    ;;
+    --piloturl)
+    piloturl="$2"
     shift
     shift
     ;;
@@ -536,7 +543,7 @@ if [ -z "${qarg}" ]; then usage; exit 1; fi
 if [ -z "${rarg}" ]; then usage; exit 1; fi
 
 
-url="http://pandaserver.cern.ch:25085/cache/schedconfig/${sflag}.all.json"
+agisurl="http://pandaserver.cern.ch:25085/cache/schedconfig/${sflag}.all.json"
 fabricmon="http://fabricmon.cern.ch/api"
 fabricmon="http://apfmon.lancs.ac.uk/api"
 if [ -z ${APFMON} ]; then
