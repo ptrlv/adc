@@ -1,13 +1,11 @@
 #!/bin/bash
 #
-# DONT USE THIS ;-)
-#
 # pilot2 wrapper used at CERN central pilot factories
 # NOTE: this is for pilot2, not the legacy pilot.py
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20190128-pilot2
+VERSION=201901dev2
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -20,13 +18,18 @@ function log() {
 }
 
 function get_workdir {
+  if [[ ${piloturl} == 'local' ]]; then
+    echo $(pwd)
+    return 0
+  fi
+    
   # If we have TMPDIR defined, then use this directory                                                                                                 
   if [[ -n ${TMPDIR} ]]; then
+    log "TMPDIR is defined, switching to ${TMPDIR}"
     cd ${TMPDIR}
   fi
-  templ=$(pwd)/condorg_XXXXXXXX
+  templ=$(pwd)/atlas_XXXXXXXX
   temp=$(mktemp -d $templ)
-  [ -n ${targ} ] && ln -s ${targ} ${temp}
   echo ${temp}
 }
 
@@ -63,12 +66,12 @@ function check_proxy() {
 
 function check_cvmfs() {
   export VO_ATLAS_SW_DIR=${VO_ATLAS_SW_DIR:-/cvmfs/atlas.cern.ch/repo/sw}
-  if [ -d /cvmfs/atlas.cern.ch/repo/sw ]; then
-    log "Found atlas cvmfs software repository"
+  if [ -d ${VO_ATLAS_SW_DIR} ]; then
+    log "Found atlas software repository"
   else
-    log "ERROR: /cvmfs/atlas.cern.ch/repo/sw not found"
-    log "FATAL: Failed to find atlas cvmfs software repository. This is a bad site, exiting."
-    err "FATAL: Failed to find atlas cvmfs software repository. This is a bad site, exiting."
+    log "ERROR: atlas software repository NOT found: ${VO_ATLAS_SW_DIR}"
+    log "FATAL: Failed to find atlas software repository"
+    err "FATAL: Failed to find atlas software repository"
     apfmon_fault 1
     sortie 1
   fi
@@ -88,6 +91,18 @@ function check_tags() {
 }
 
 function setup_alrb() {
+  log 'NOTE: rucio,davix,xrootd setup now done in local site setup atlasLocalSetup.sh'
+  if [[ ${iarg} == "RC" ]]; then
+    log 'RC pilot requested, setting ALRB_rucioVersion=testing'
+    export ALRB_rucioVersion=testing
+  fi
+  if [[ ${iarg} == "ALRB" ]]; then
+    log 'ALRB pilot requested, setting ALRB env vars to testing'
+    export ALRB_asetupVersion=testing
+    export ALRB_xrootdVersion=testing
+    export ALRB_davixVersion=testing
+    export ALRB_rucioVersion=testing
+  fi
   export ATLAS_LOCAL_ROOT_BASE=${ATLAS_LOCAL_ROOT_BASE:-/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase}
   export ALRB_noGridMW=YES
   export ALRB_userMenuFmtSkip=YES
@@ -99,21 +114,6 @@ function setup_alrb() {
     err "ERROR: ALRB not found: /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase, exiting"
     apfmon_fault 1
     sortie 1
-  fi
-}
-
-function setup_tools() {
-  log 'NOTE: rucio,davix,xrootd setup now done in local site setup'
-  if [[ ${PILOT_TYPE} = "RC" ]]; then
-    log 'PILOT_TYPE=RC, setting ALRB_rucioVersion=testing'
-    export ALRB_rucioVersion=testing
-  fi
-  if [[ ${PILOT_TYPE} = "ALRB" ]]; then
-    log 'PILOT_TYPE=ALRB, setting ALRB env vars to testing'
-    export ALRB_asetupVersion=testing
-    export ALRB_xrootdVersion=testing
-    export ALRB_davixVersion=testing
-    export ALRB_rucioVersion=testing
   fi
 }
 
@@ -170,65 +170,54 @@ function check_agis() {
 }
 
 function pilot_cmd() {
-  if [[ -n "${PILOT_TYPE}" ]]; then
-    pilotargs="-a ${workdir} -i ${PILOT_TYPE} ${pilotargs}"
-  else
-    pilotargs="-a ${workdir} ${pilotargs}"
-  fi
-  cmd="${pybin} pilot.py -q ${qarg} -r ${rarg} -s ${sarg} --pilot-user=ATLAS ${pilotargs}"
+  cmd="${pybin} pilot.py -q ${qarg} -r ${rarg} -s ${sarg} -i ${iarg} -j ${jarg} --pilot-user=ATLAS ${pilotargs}"
   echo ${cmd}
 }
 
 function get_pilot() {
-  # N.B. an RC pilot is chosen once every 100 downloads for production and
-  # ptest jobs use Paul's development release.
 
-  # pilot2 has a single version for development, for now
-  if [[ -z ${PILOT_HTTP_SOURCES} ]]; then
-    if echo $myargs | grep -- "-u ptest" > /dev/null; then 
-      log "This is a ptest pilot. Development pilot will be used"
-      PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2-dev.tar.gz"
-      PILOT_TYPE=PT
-    elif echo $myargs | grep -- "-t" > /dev/null; then 
-      log "The local development pilot will be used"
-      TEST_SETUP=1
-    elif [[ $(($RANDOM%100)) = "0" ]]; then
-      log "Release candidate pilot will be used"
-      PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2-dev.tar.gz"
-      PILOT_TYPE=RC
-    elif echo $myargs | grep -- "-i RC" > /dev/null; then
-      log "Release candidate pilot2 will be used due to wrapper cmdline option"
-      PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2-dev.tar.gz"
-      PILOT_TYPE=RC
-    elif echo $myargs | grep -- "-i ALRB" > /dev/null; then
-      log "ALRB pilot, normal production pilot2 will be used" 
-      PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2.tar.gz"
-      PILOT_TYPE=ALRB
-    else
-      log "Normal production pilot2 will be used" 
-      PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2.tar.gz"
-      PILOT_TYPE=PR
-    fi
-  fi
-
-  [ $TEST_SETUP == 1 ] && return 0 
-   
-  for piloturl in ${PILOT_HTTP_SOURCES}; do
-    curl --connect-timeout 30 --max-time 180 -sS ${piloturl} | tar -xzf -
+  if [[ -f pilot2.tar.gz ]]; then
+    tar -xzf pilot2.tar.gz
     if [ -f pilot2/pilot.py ]; then
-      log "Pilot download OK: ${piloturl}"
+      log "Pilot extracted from existing tarball"
       return 0
     fi
-    log "ERROR: pilot download and extraction failed: ${piloturl}"
-    err "ERROR: pilot download and extraction failed: ${piloturl}"
-  done
-  return 1
+    log "FATAL: pilot extraction failed"
+    err "FATAL: pilot extraction failed"
+    return 1
+  fi
+
+  if [[ ${piloturl} == 'local' ]]; then
+    log "Local pilotcode will be used since piloturl=local"
+    if [[ -f pilot2/pilot.py ]]; then
+      log "Local pilot OK: $(pwd)/pilot2/pilot.py"
+      return 0
+    else
+      log "Local pilot NOT found: $(pwd)/pilot2/pilot.py"
+      err "Local pilot NOT found: $(pwd)/pilot2/pilot.py"
+      return 1 
+    fi
+  fi
+   
+  curl --connect-timeout 30 --max-time 180 -sS ${piloturl} | tar -xzf -
+  if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+    log "ERROR: pilot download failed: ${piloturl}"
+    err "ERROR: pilot download failed: ${piloturl}"
+    return 1
+  fi
+  if [[ -f pilot2/pilot.py ]]; then
+    log "Pilot download OK: ${piloturl}"
+    return 0
+  else
+    log "ERROR: pilot extraction failed: ${piloturl}"
+    err "ERROR: pilot extraction failed: ${piloturl}"
+    return 1
+  fi
 }
 
 function apfmon_running() {
   echo -n "running 0 ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
-  out=$(curl -ksS --connect-timeout 10 --max-time 20 \
-             -d state=running -d wrapper=$VERSION \
+  out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=running -d wrapper=$VERSION \
              ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ $? -eq 0 ]]; then
     log $out
@@ -240,7 +229,8 @@ function apfmon_running() {
 }
 
 function apfmon_exiting() {
-  out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=exiting -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID})
+  out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=exiting -d rc=$1 \
+             ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ $? -eq 0 ]]; then
     log $out
   else
@@ -301,7 +291,7 @@ function main() {
     apfmon_running
     echo
 
-    echo "---- Check singularity details ----"
+    echo "---- Check singularity details (development) ----"
     sing_opts=$(get_singopts)
     echo $sing_opts
 
@@ -347,9 +337,8 @@ function main() {
     export ALRB_noGridMW=NO
   fi
   
-  echo "---- Host environment ----"
-  echo "hostname:" $(hostname)
-  echo "hostname -f:" $(hostname -f)
+  echo "---- Host details ----"
+  echo "hostname:" $(hostname -f)
   echo "pwd:" $(pwd)
   echo "whoami:" $(whoami)
   echo "id:" $(id)
@@ -374,19 +363,18 @@ function main() {
   echo "---- Retrieve pilot code ----"
   get_pilot
   if [[ $? -ne 0 ]]; then
-    log "FATAL: failed to retrieve pilot code"
-    err "FATAL: failed to retrieve pilot code"
+    log "FATAL: failed to get pilot code"
+    err "FATAL: failed to get pilot code"
     apfmon_fault 1
     sortie 1
   fi
   echo
   
-  echo "---- JOB Environment ----"
+  echo "---- Initial environment ----"
+  printenv | sort
   export SITE_NAME=${sflag}
   export VO_ATLAS_SW_DIR='/cvmfs/atlas.cern.ch/repo/sw'
-  export ALRB_userMenuFmtSkip=YES
   export ATLAS_LOCAL_ROOT_BASE='/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase'
-  printenv | sort
   echo
   
   echo "---- Shell process limits ----"
@@ -403,10 +391,6 @@ function main() {
 
   echo "---- Setup ALRB ----"
   setup_alrb
-  echo
-
-  echo "---- Setup tools ----"
-  setup_tools
   echo
 
   echo "---- Setup local ATLAS ----"
@@ -430,6 +414,7 @@ function main() {
   fi
   cd $workdir/pilot2
   log "cd $workdir/pilot2"
+  echo
 
   echo "---- JOB Environment ----"
   printenv | sort
@@ -458,7 +443,7 @@ function main() {
   find ${workdir} -name pandaIDs.out -exec cat {} \;
   echo
 
-  if [ $TEST_SETUP != 1 ]; then 
+  if [[ ${piloturl} != 'local' ]]; then
       log "cleanup: rm -rf $workdir"
       rm -fr $workdir
   else 
@@ -475,21 +460,25 @@ function main() {
 function usage () {
   echo "Usage: $0 -q <queue> -r <resource> -s <site> [<pilot_args>]"
   echo
+  echo "  -i,   pilot type, default PR"
+  echo "  -j,   job type prodsourcelabel, default 'managed'"
   echo "  -q,   panda queue"
   echo "  -r,   panda resource"
   echo "  -s,   sitename for local setup"
-  echo "  -t,   use local development pilot, requires location of pilot2 directory. It skips the cleanup at the end"
-  echo "  --piloturl, URL of pilot code tarball, default is http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2.tar.gz
+  echo "  --piloturl, URL of pilot code tarball, default is http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2.tar.gz"
   echo
   exit 1
 }
 
+starttime=$(date +%s)
+
 # wrapper args are explicit if used in the wrapper
 # additional pilot2 args are passed as extra args
+iarg='PT'
+jarg='managed'
 qarg=''
 rarg=''
 sarg=''
-targ=''
 piloturl='http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2.tar.gz'
 myargs="$@"
 
@@ -508,6 +497,16 @@ case $key in
     shift
     shift
     ;;
+    -i)
+    iarg="$2"
+    shift
+    shift
+    ;;
+    -j)
+    jarg="$2"
+    shift
+    shift
+    ;;
     -q)
     qarg="$2"
     shift
@@ -523,11 +522,6 @@ case $key in
     shift
     shift
     ;;
-    -t)
-    targ="$2"
-    shift
-    shift
-    ;;
     *)
     POSITIONAL+=("$1") # save it in an array for later
     shift
@@ -536,12 +530,11 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-pilotargs="$@"
-
 if [ -z "${sarg}" ]; then usage; exit 1; fi
 if [ -z "${qarg}" ]; then usage; exit 1; fi
 if [ -z "${rarg}" ]; then usage; exit 1; fi
 
+pilotargs="$@"
 
 agisurl="http://pandaserver.cern.ch:25085/cache/schedconfig/${sflag}.all.json"
 fabricmon="http://fabricmon.cern.ch/api"
