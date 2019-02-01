@@ -5,7 +5,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=201901dev2
+VERSION=20190201dev2
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -25,7 +25,6 @@ function get_workdir {
     
   # If we have TMPDIR defined, then use this directory                                                                                                 
   if [[ -n ${TMPDIR} ]]; then
-    log "TMPDIR is defined, switching to ${TMPDIR}"
     cd ${TMPDIR}
   fi
   templ=$(pwd)/atlas_XXXXXXXX
