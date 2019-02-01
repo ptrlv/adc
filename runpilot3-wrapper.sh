@@ -6,7 +6,7 @@
 
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20190114a
+VERSION=20190201a
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -22,7 +22,7 @@ function log() {
 }
 
 function get_workdir {
-  if [[ "${Fflag}" = "Nordugrid-ATLAS" ]]; then
+  if [[ "${Fflag}" == "Nordugrid-ATLAS" ]]; then
     echo "."
     return
   fi
@@ -57,7 +57,7 @@ function check_python() {
 
 function check_proxy() {
   # For Nordugrid skip this check
-  if [[ "${Fflag}" = "Nordugrid-ATLAS" ]]; then
+  if [[ "${Fflag}" == "Nordugrid-ATLAS" ]]; then
     return
   fi
   voms-proxy-info -all
@@ -143,11 +143,11 @@ function setup_alrb() {
 
 function setup_tools() {
   log 'NOTE: rucio,davix,xrootd setup now done in local site setup'
-  if [[ ${PILOT_TYPE} = "RC" ]]; then
+  if [[ ${PILOT_TYPE} == "RC" ]]; then
     log 'PILOT_TYPE=RC, setting ALRB_rucioVersion=testing'
     export ALRB_rucioVersion=testing
   fi
-  if [[ ${PILOT_TYPE} = "ALRB" ]]; then
+  if [[ ${PILOT_TYPE} == "ALRB" ]]; then
     log 'PILOT_TYPE=ALRB, setting ALRB env vars to testing'
     export ALRB_asetupVersion=testing
     export ALRB_xrootdVersion=testing
@@ -208,7 +208,7 @@ function check_agis() {
 }
 
 function pilot_cmd() {
-  if [[ "${Fflag}" = "Nordugrid-ATLAS" ]]; then
+  if [[ "${Fflag}" == "Nordugrid-ATLAS" ]]; then
     pilot_args="$myargs"
   elif [[ -n "${PILOT_TYPE}" ]]; then
     pilot_args="-d $workdir $myargs -i ${PILOT_TYPE} -G 1"
@@ -243,7 +243,7 @@ function get_pilot() {
       log "This is a ptest pilot. Development pilot will be used"
       PILOT_HTTP_SOURCES="http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilotcode-dev.tar.gz"
       PILOT_TYPE=PT
-    elif [ $(($RANDOM%100)) = "0" ] && [ "$uflag" == "" ] && [ "$iflag" == "" ]; then
+    elif [ $(($RANDOM%100)) == "0" ] && [ "$uflag" == "" ] && [ "$iflag" == "" ]; then
       log "Release candidate pilot will be used"
       PILOT_HTTP_SOURCES="http://pandaserver.cern.ch:25085/cache/pilot/pilotcode-rc.tar.gz"
       PILOT_TYPE=RC
@@ -423,7 +423,7 @@ function main() {
       use_singularity=false
     fi
 
-    if [[ ${use_singularity} = true ]]; then
+    if [[ ${use_singularity} == true ]]; then
       log 'SINGULARITY_INIT is not set'
       check_singularity
       export ALRB_noGridMW=NO
@@ -472,7 +472,7 @@ function main() {
   
   echo "---- Enter workdir ----"
   workdir=$(get_workdir)
-  if [[ "$fflag" = "false" && -f pandaJobData.out && ! -f ${workdir}/pandaJobData.out ]]; then
+  if [[ "$fflag" == "false" && -f pandaJobData.out && ! -f ${workdir}/pandaJobData.out ]]; then
     log "Copying job description to working dir"
     cp pandaJobData.out $workdir/pandaJobData.out
   fi
@@ -526,16 +526,17 @@ function main() {
 
   echo "---- Ready to run pilot ----"
   trap trap_handler SIGTERM SIGQUIT SIGSEGV SIGXCPU SIGUSR1 SIGBUS
-  if [[ "${Fflag}" = "Nordugrid-ATLAS" ]]; then
+  if [[ "${Fflag}" == "Nordugrid-ATLAS" ]]; then
     nordugrid_pre_processing
   else
-    if [[ "${fflag}" = "false" && -f pandaJobData.out ]]; then
+    if [[ "${fflag}" == "false" && -f pandaJobData.out ]]; then
       log "Copying job description to pilot dir"
       cp pandaJobData.out pilot/pandaJobData.out
     fi
     cd $workdir/pilot
     log "cd $workdir/pilot"
   fi
+  echo
 
   echo "---- JOB Environment ----"
   printenv | sort
@@ -571,7 +572,7 @@ function main() {
   log "STATUSCODE: ${scode}"
   apfmon_exiting ${scode} ${pandaids}
 
-  if [[ "${Fflag}" = "Nordugrid-ATLAS" ]]; then
+  if [[ "${Fflag}" == "Nordugrid-ATLAS" ]]; then
     nordugrid_post_processing
     if [[ $? -ne 0 ]]; then
       sortie $?
