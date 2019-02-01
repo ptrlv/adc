@@ -56,12 +56,18 @@ function check_python() {
 function check_proxy() {
   voms-proxy-info -all
   if [[ $? -ne 0 ]]; then
-    log "FATAL: error running: voms-proxy-info -all"
-    err "FATAL: error running: voms-proxy-info -all"
-    apfmon_fault 1
-    sortie 1
+    log "WARNING: error running: voms-proxy-info -all"
+    err "WARNING: error running: voms-proxy-info -all"
+    arcproxy -I
+    if [[ $? -eq 127 ]]; then
+      log "FATAL: error running: arcproxy -I"
+      err "FATAL: error running: arcproxy -I"
+      apfmon_fault 1
+      sortie 1
+    fi
   fi
 }
+
 
 function check_cvmfs() {
   export VO_ATLAS_SW_DIR=${VO_ATLAS_SW_DIR:-/cvmfs/atlas.cern.ch/repo/sw}
