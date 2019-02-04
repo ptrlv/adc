@@ -220,7 +220,13 @@ function get_pilot() {
   fi
 }
 
+function muted() {
+  log "apfmon messages muted"
+  return 0
+}
+
 function apfmon_running() {
+  [[ ${mute} == 'true' ]] && muted
   echo -n "running 0 ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
   out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=running -d wrapper=$VERSION \
              ${APFMON}/jobs/${APFFID}:${APFCID})
@@ -234,6 +240,7 @@ function apfmon_running() {
 }
 
 function apfmon_exiting() {
+  [[ ${mute} == 'true' ]] && muted
   out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=exiting -d rc=$1 \
              ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ $? -eq 0 ]]; then
@@ -245,10 +252,7 @@ function apfmon_exiting() {
 }
 
 function apfmon_fault() {
-  if [ -z ${APFMON} ]; then
-    err "wrapper monitoring not configured"
-    return
-  fi
+  [[ ${mute} == 'true' ]] && muted
 
   out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=fault -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ $? -eq 0 ]]; then
@@ -273,11 +277,18 @@ function sortie() {
     state=fault
   fi
 
-  duration=$(( $(date +%s) - ${starttime} ))
-  echo -n "${state} ${duration} ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
-  log "wrapper ${state} ec=$ec, duration=${duration}"
   log "==== wrapper stdout END ===="
   err "==== wrapper stderr END ===="
+
+  duration=$(( $(date +%s) - ${starttime} ))
+  log "wrapper ${state} ec=$ec, duration=${duration}"
+  
+  if [[ ${mute} == 'true' ]]; then
+    muted
+  else
+    echo -n "${state} ${duration} ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
+  fi
+
   exit $ec
 }
 
@@ -452,7 +463,7 @@ function main() {
       log "cleanup: rm -rf $workdir"
       rm -fr $workdir
   else 
-      log "Test setup not cleaning"
+      log "Test setup, not cleaning"
   fi
 
   if [[ -z ${SINGULARITY_INIT} ]]; then
@@ -485,6 +496,7 @@ qarg=''
 rarg=''
 sarg=''
 piloturl='http://project-atlas-gmsb.web.cern.ch/project-atlas-gmsb/pilot2.tar.gz'
+mute='false'
 myargs="$@"
 
 POSITIONAL=()
@@ -495,6 +507,10 @@ case $key in
     -h|--help)
     usage
     shift
+    shift
+    ;;
+    --mute)
+    mute='true'
     shift
     ;;
     --piloturl)
