@@ -574,8 +574,9 @@ function main() {
 
   if [[ "${Fflag}" == "Nordugrid-ATLAS" ]]; then
     nordugrid_post_processing
-    if [[ $? -ne 0 ]]; then
-      sortie $?
+    ec=$?
+    if [[ $ec -ne 0 ]]; then
+      sortie $ec
     fi
   else
     log "cleanup: rm -rf $workdir"
