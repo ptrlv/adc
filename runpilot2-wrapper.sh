@@ -25,7 +25,7 @@ function get_workdir {
     
   # If we have TMPDIR defined, then use this directory                                                                                                 
   if [[ -n ${TMPDIR} ]]; then
-    templ=$(TMPDIR)/atlas_XXXXXXXX
+    templ=${TMPDIR}/atlas_XXXXXXXX
   else:
     templ=$(pwd)/atlas_XXXXXXXX
   fi
