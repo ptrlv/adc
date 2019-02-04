@@ -5,7 +5,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20190201dev2
+VERSION=20190204dev1
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -25,9 +25,10 @@ function get_workdir {
     
   # If we have TMPDIR defined, then use this directory                                                                                                 
   if [[ -n ${TMPDIR} ]]; then
-    cd ${TMPDIR}
+    templ=$(TMPDIR)/atlas_XXXXXXXX
+  else:
+    templ=$(pwd)/atlas_XXXXXXXX
   fi
-  templ=$(pwd)/atlas_XXXXXXXX
   temp=$(mktemp -d $templ)
   echo ${temp}
 }
@@ -67,7 +68,6 @@ function check_proxy() {
     fi
   fi
 }
-
 
 function check_cvmfs() {
   export VO_ATLAS_SW_DIR=${VO_ATLAS_SW_DIR:-/cvmfs/atlas.cern.ch/repo/sw}
@@ -175,12 +175,11 @@ function check_agis() {
 }
 
 function pilot_cmd() {
-  cmd="${pybin} pilot.py -q ${qarg} -r ${rarg} -s ${sarg} -i ${iarg} -j ${jarg} --pilot-user=ATLAS ${pilotargs}"
+  cmd="${pybin} pilot2/pilot.py -q ${qarg} -r ${rarg} -s ${sarg} -i ${iarg} -j ${jarg} --pilot-user=ATLAS ${pilotargs}"
   echo ${cmd}
 }
 
 function get_pilot() {
-
   if [[ -f pilot2.tar.gz ]]; then
     tar -xzf pilot2.tar.gz
     if [ -f pilot2/pilot.py ]; then
@@ -222,7 +221,6 @@ function get_pilot() {
 
 function muted() {
   log "apfmon messages muted"
-  return 0
 }
 
 function apfmon_running() {
@@ -422,18 +420,12 @@ function main() {
   echo cmd: ${cmd}
   echo
 
-  echo "---- Ready to run pilot ----"
-  trap trap_handler SIGTERM SIGQUIT SIGSEGV SIGXCPU SIGUSR1 SIGBUS
-  if [[ -f pandaJobData.out ]]; then
-    log "Copying job description to pilot dir"
-    cp pandaJobData.out pilot2/pandaJobData.out
-  fi
-  cd $workdir/pilot2
-  log "cd $workdir/pilot2"
-  echo
-
   echo "---- JOB Environment ----"
   printenv | sort
+  echo
+
+  echo "---- Ready to run pilot ----"
+  trap trap_handler SIGTERM SIGQUIT SIGSEGV SIGXCPU SIGUSR1 SIGBUS
   echo
 
   log "==== pilot stdout BEGIN ===="
@@ -447,7 +439,7 @@ function main() {
   
   # notify monitoring, job exiting, capture the pilot exit status
   if [[ -f STATUSCODE ]]; then
-    scode=$(cat STATUSCODE)
+    scode=$(cat pilot2/STATUSCODE)
   else
     scode=$pilotrc
   fi
@@ -455,8 +447,8 @@ function main() {
   apfmon_exiting $scode
   
   echo "---- find pandaID.out ----"
-  find ${workdir} -name pandaIDs.out -exec ls -l {} \;
-  find ${workdir} -name pandaIDs.out -exec cat {} \;
+  find ${workdir}/pilot2 -name pandaIDs.out -exec ls -l {} \;
+  find ${workdir}/pilot2 -name pandaIDs.out -exec cat {} \;
   echo
 
   if [[ ${piloturl} != 'local' ]]; then
