@@ -232,7 +232,7 @@ function apfmon_running() {
     log $out
     err $out
   else
-    err "wrapper monitor warning"
+    err "WARNING: wrapper monitor"
     err "ARGS: -d state=running -d wrapper=$VERSION ${APFMON}/jobs/${APFFID}:${APFCID}"
   fi
 }
