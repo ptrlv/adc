@@ -5,7 +5,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20190204dev1
+VERSION=20190205dev2
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -224,7 +224,7 @@ function muted() {
 }
 
 function apfmon_running() {
-  [[ ${mute} == 'true' ]] && muted
+  [[ ${mute} == 'true' ]] && muted && return 0
   echo -n "running 0 ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
   out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=running -d wrapper=$VERSION \
              ${APFMON}/jobs/${APFFID}:${APFCID})
@@ -238,7 +238,7 @@ function apfmon_running() {
 }
 
 function apfmon_exiting() {
-  [[ ${mute} == 'true' ]] && muted
+  [[ ${mute} == 'true' ]] && muted && return 0
   out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=exiting -d rc=$1 \
              ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ $? -eq 0 ]]; then
@@ -250,7 +250,7 @@ function apfmon_exiting() {
 }
 
 function apfmon_fault() {
-  [[ ${mute} == 'true' ]] && muted
+  [[ ${mute} == 'true' ]] && muted && return 0
 
   out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=fault -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ $? -eq 0 ]]; then
