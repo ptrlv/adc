@@ -230,7 +230,6 @@ function apfmon_running() {
              ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ $? -eq 0 ]]; then
     log $out
-    err $out
   else
     err "WARNING: wrapper monitor"
     err "ARGS: -d state=running -d wrapper=$VERSION ${APFMON}/jobs/${APFFID}:${APFCID}"
@@ -482,7 +481,7 @@ starttime=$(date +%s)
 
 # wrapper args are explicit if used in the wrapper
 # additional pilot2 args are passed as extra args
-iarg='PT'
+iarg='PR'
 jarg='managed'
 qarg=''
 rarg=''
