@@ -5,7 +5,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20190208a
+VERSION=20190304a
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -23,8 +23,9 @@ function get_workdir {
     return 0
   fi
     
-  # If we have TMPDIR defined, then use this directory                                                                                                 
-  if [[ -n ${TMPDIR} ]]; then
+  if [[ -n ${OSG_WN_TMP} ]]; then
+    templ=${OSG_WN_TMP}/atlas_XXXXXXXX
+  elif [[ -n ${TMPDIR} ]]; then
     templ=${TMPDIR}/atlas_XXXXXXXX
   else
     templ=$(pwd)/atlas_XXXXXXXX
@@ -446,6 +447,7 @@ function main() {
   apfmon_exiting $scode
   
   echo "---- find pandaID.out ----"
+  ls -l ${workdir}/pilot2
   find ${workdir}/pilot2 -name pandaIDs.out -exec ls -l {} \;
   find ${workdir}/pilot2 -name pandaIDs.out -exec cat {} \;
   echo
