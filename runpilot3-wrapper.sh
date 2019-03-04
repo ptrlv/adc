@@ -6,7 +6,7 @@
 
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20190201a
+VERSION=20190304a
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -26,12 +26,15 @@ function get_workdir {
     echo "."
     return
   fi
-  # If we have TMPDIR defined, then use this directory
-  if [[ -n ${TMPDIR} ]]; then
-    cd ${TMPDIR}
+  if [[ -n ${OSG_WN_TMP} ]]; then
+    templ=${OSG_WN_TMP}/atlas_XXXXXXXX
+  elif [[ -n ${TMPDIR} ]]; then
+    templ=${TMPDIR}/atlas_XXXXXXXX
+  else
+    templ=$(pwd)/atlas_XXXXXXXX
   fi
-  templ=$(pwd)/condorg_XXXXXXXX
   temp=$(mktemp -d $templ)
+
   echo ${temp}
 }
 
