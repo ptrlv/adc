@@ -334,6 +334,7 @@ function nordugrid_pre_processing() {
 }
 
 function nordugrid_post_processing() {
+  rm -f pilot.py PILOTVERSION RunJobEvent.py RunJob.py VmPeak.py
   if [ -f log_extracts.txt ] ; then
     exitcode=`grep ExitCode log_extracts.txt |awk -F '=' '{print $2}'`
     if [[ "$exitcode" == "" ]] ; then
