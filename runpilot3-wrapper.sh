@@ -26,15 +26,18 @@ function get_workdir {
     echo "."
     return
   fi
-  if [[ -n ${OSG_WN_TMP} ]]; then
+  if [[ -d ${OSG_WN_TMP} ]]; then
     templ=${OSG_WN_TMP}/atlas_XXXXXXXX
-  elif [[ -n ${TMPDIR} ]]; then
+  elif [[ -d ${TMPDIR} ]]; then
     templ=${TMPDIR}/atlas_XXXXXXXX
   else
     templ=$(pwd)/atlas_XXXXXXXX
   fi
   temp=$(mktemp -d $templ)
-
+  if [[ $? -ne 0 ]]; then
+    echo "Could not create workdir at ${templ}"
+    sortie 1
+  fi
   echo ${temp}
 }
 
