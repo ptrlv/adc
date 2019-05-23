@@ -290,6 +290,7 @@ function get_pilot() {
 }
 
 function apfmon_running() {
+  [[ -z "${APFCID}" ]] && return 0
   echo -n "running 0 ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
   out=$(curl -ksS --connect-timeout 10 --max-time 20 \
              -d state=running -d wrapper=$VERSION \
@@ -304,6 +305,7 @@ function apfmon_running() {
 }
 
 function apfmon_exiting() {
+  [[ -z "${APFCID}" ]] && return 0
   out=$(curl -ksS --connect-timeout 10 --max-time 20 \
              -d state=exiting -d rc=$1 -d ids=$2 \
              ${APFMON}/jobs/${APFFID}:${APFCID})
@@ -316,6 +318,7 @@ function apfmon_exiting() {
 }
 
 function apfmon_fault() {
+  [[ -z "${APFCID}" ]] && return 0
   out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=fault -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ $? -eq 0 ]]; then
     log $out
