@@ -151,7 +151,11 @@ function check_singularity() {
 }
 
 function get_singopts() {
-  container_opts=$(curl --silent $agisurl | grep container_options | grep -v null)
+  if [[ -f queuedata.json ]]; then
+    container_opts=$(cat queuedata.json | grep container_options | grep -v null)
+  else
+    container_opts=$(curl --silent $agisurl | grep container_options | grep -v null)
+  fi
   if [[ $? -eq 0 ]]; then
     singopts=$(echo $container_opts | awk -F"\"" '{print $4}')
     log "AGIS container_options found"
@@ -165,7 +169,11 @@ function get_singopts() {
 }
 
 function check_agis() {
-  result=$(curl --silent $agisurl | grep container_type | grep 'singularity:wrapper')
+  if [[ -f queuedata.json ]]; then
+    result=$(cat queuedata.json | grep container_type | grep 'singularity:wrapper')
+  else
+    result=$(curl --silent $agisurl | grep container_type | grep 'singularity:wrapper')
+  fi
   if [[ $? -eq 0 ]]; then
     log "AGIS container_type: singularity:wrapper found"
     return 0
