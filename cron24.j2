@@ -1,9 +1,9 @@
 MAILTO=peter.love@cern.ch
 # refresh config from AGIS and restart factory
-1-51/30 * * * * root /usr/local/bin/all-agis.sh {{ clouds }} > /var/log/autopyfactory/all-agis.log
-2-52/30 * * * * root /sbin/service autopyfactory restart >/dev/null
+#1-51/30 * * * * root /usr/local/bin/all-agis.sh {{ clouds }} > /var/log/autopyfactory/all-agis.log
+#2-52/30 * * * * root /sbin/service autopyfactory restart >/dev/null
 # apfmon move between states quicker
-*/5 * * * * root /usr/local/bin/transition.sh /var/lib/condor/spool/history > /var/log/autopyfactory/trans.log
+#*/5 * * * * root /usr/local/bin/transition.sh /var/lib/condor/spool/history > /var/log/autopyfactory/trans.log
 # Publish health stats for kibana and apfmon
-*/2 * * * * root /usr/local/bin/health.sh >/dev/null 2>&1
-*/10 * * * * root /usr/local/bin/errors.sh >/dev/null 2>&1
+#*/2 * * * * root /usr/local/bin/health.sh >/dev/null 2>&1
+#*/10 * * * * root /usr/local/bin/errors.sh >/dev/null 2>&1
