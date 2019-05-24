@@ -110,8 +110,10 @@ function setup_alrb() {
     export ALRB_rucioVersion=testing
   fi
   export ATLAS_LOCAL_ROOT_BASE=${ATLAS_LOCAL_ROOT_BASE:-/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase}
-  export ALRB_noGridMW=YES
   export ALRB_userMenuFmtSkip=YES
+  export ALRB_noGridMW=NO
+  check_vomsproxyinfo || check_arcproxy && export ALRB_noGridMW=YES
+
   if [ -d /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase ]; then
     log 'source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh --quiet'
     source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh --quiet
@@ -179,6 +181,28 @@ function check_agis() {
     return 0
   else
     log "AGIS container_type does not contain singularity:wrapper"
+    return 1
+  fi
+}
+
+function check_vomsproxyinfo() {
+  out=$(voms-proxy-info --version 2>/dev/null)
+  if [[ $? -eq 0 ]]; then
+    log "Check version: ${out}"
+    return 0
+  else
+    log "voms-proxy-info not found"
+    return 1
+  fi
+}
+
+function check_arcproxy() {
+  out=$(arcproxy --version 2>/dev/null)
+  if [[ $? -eq 0 ]]; then
+    log "Check version: ${out}"
+    return 0
+  else
+    log "arcproxy not found"
     return 1
   fi
 }
