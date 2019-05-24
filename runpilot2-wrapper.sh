@@ -5,7 +5,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20190304a-pilot2
+VERSION=20190515a-pilot2
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -227,37 +227,37 @@ function muted() {
 function apfmon_running() {
   [[ ${mute} == 'true' ]] && muted && return 0
   echo -n "running 0 ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
-  out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=running -d wrapper=$VERSION \
+  out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=wrapperrunning -d wrapper=$VERSION \
              ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ $? -eq 0 ]]; then
     log $out
   else
     err "WARNING: wrapper monitor"
-    err "ARGS: -d state=running -d wrapper=$VERSION ${APFMON}/jobs/${APFFID}:${APFCID}"
+    err "ARGS: -d state=wrapperrunning -d wrapper=$VERSION ${APFMON}/jobs/${APFFID}:${APFCID}"
   fi
 }
 
 function apfmon_exiting() {
   [[ ${mute} == 'true' ]] && muted && return 0
-  out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=exiting -d rc=$1 \
+  out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=wrapperexiting -d rc=$1 \
              ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ $? -eq 0 ]]; then
     log $out
   else
     err "WARNING: wrapper monitor"
-    err "ARGS: -d state=exiting -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}"
+    err "ARGS: -d state=wrapperexiting -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}"
   fi
 }
 
 function apfmon_fault() {
   [[ ${mute} == 'true' ]] && muted && return 0
 
-  out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=fault -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID})
+  out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=wrapperfault -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ $? -eq 0 ]]; then
     log $out
   else
     err "WARNING: wrapper monitor"
-    err "ARGS: -d state=fault -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}"
+    err "ARGS: -d state=wrapperfault -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID}"
   fi
 }
 
@@ -270,9 +270,9 @@ function trap_handler() {
 function sortie() {
   ec=$1
   if [[ $ec -eq 0 ]]; then
-    state=exiting
+    state=wrapperexiting
   else
-    state=fault
+    state=wrapperfault
   fi
 
   log "==== wrapper stdout END ===="
