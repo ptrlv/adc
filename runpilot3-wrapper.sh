@@ -189,7 +189,11 @@ function check_singularity() {
 }
 
 function get_singopts() {
-  container_opts=$(curl --silent $url | grep container_options | grep -v null)
+  if [[ -f queuedata.json ]]; then
+    container_opts=$(cat queuedata.json | grep container_options | grep -v null)
+  else
+    container_opts=$(curl --silent $url | grep container_options | grep -v null)
+  fi
   if [[ $? -eq 0 ]]; then
     singopts=$(echo $container_opts | awk -F"\"" '{print $4}')
     log "AGIS container_options found"
@@ -203,7 +207,11 @@ function get_singopts() {
 }
 
 function check_agis() {
-  result=$(curl --silent $url | grep container_type | grep 'singularity:wrapper')
+  if [[ -f queuedata.json ]]; then
+    result=$(cat queuedata.json | grep container_type | grep 'singularity:wrapper')
+  else
+    result=$(curl --silent $url | grep container_type | grep 'singularity:wrapper')
+  fi
   if [[ $? -eq 0 ]]; then
     log "AGIS container_type: singularity:wrapper found"
     return 0
@@ -282,6 +290,7 @@ function get_pilot() {
 }
 
 function apfmon_running() {
+  [[ -z "${APFCID}" ]] && return 0
   echo -n "running 0 ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
   out=$(curl -ksS --connect-timeout 10 --max-time 20 \
              -d state=running -d wrapper=$VERSION \
@@ -296,6 +305,7 @@ function apfmon_running() {
 }
 
 function apfmon_exiting() {
+  [[ -z "${APFCID}" ]] && return 0
   out=$(curl -ksS --connect-timeout 10 --max-time 20 \
              -d state=exiting -d rc=$1 -d ids=$2 \
              ${APFMON}/jobs/${APFFID}:${APFCID})
@@ -308,6 +318,7 @@ function apfmon_exiting() {
 }
 
 function apfmon_fault() {
+  [[ -z "${APFCID}" ]] && return 0
   out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=fault -d rc=$1 ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ $? -eq 0 ]]; then
     log $out
