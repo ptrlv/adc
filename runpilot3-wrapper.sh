@@ -412,7 +412,7 @@ function sortie() {
   fi
 
   duration=$(( $(date +%s) - ${starttime} ))
-  echo -n "${state} ${duration} ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
+  [[ -n "${APFCID}" ]] && echo -n "${state} ${duration} ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
   log "wrapper ${state} ec=$ec, duration=${duration}"
   log "==== wrapper stdout END ===="
   err "==== wrapper stderr END ===="
