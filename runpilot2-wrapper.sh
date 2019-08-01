@@ -5,7 +5,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20190524a-pilot2
+VERSION=20190801a-pilot2
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -127,11 +127,16 @@ function setup_alrb() {
 
 # still needed? using VO_ATLAS_SW_DIR is specific to EGI
 function setup_local() {
-  export SITE_NAME=${sflag}
+  export SITE_NAME=${sarg}
   log "Looking for ${VO_ATLAS_SW_DIR}/local/setup.sh"
   if [[ -f ${VO_ATLAS_SW_DIR}/local/setup.sh ]]; then
-    log "Sourcing ${VO_ATLAS_SW_DIR}/local/setup.sh -s $sarg"
-    source ${VO_ATLAS_SW_DIR}/local/setup.sh -s $sarg
+    log "Sourcing ${VO_ATLAS_SW_DIR}/local/setup.sh -s ${sarg}"
+    source ${VO_ATLAS_SW_DIR}/local/setup.sh -s ${sarg}
+#    if [[ $? -eq 0 ]]; then
+#      log "Error when sourcing ${VO_ATLAS_SW_DIR}/local/setup.sh -s ${sarg}"
+#      err "Error when sourcing ${VO_ATLAS_SW_DIR}/local/setup.sh -s ${sarg}"
+#      sortie 1
+#    fi
   else
     log 'WARNING: No ATLAS local setup found'
     err 'WARNING: this site has no local setup ${VO_ATLAS_SW_DIR}/local/setup.sh'
@@ -258,7 +263,7 @@ function muted() {
 
 function apfmon_running() {
   [[ ${mute} == 'true' ]] && muted && return 0
-  echo -n "running 0 ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
+  echo -n "running 0 ${VERSION} ${sarg} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
   out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=wrapperrunning -d wrapper=$VERSION \
              ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ $? -eq 0 ]]; then
@@ -418,7 +423,8 @@ function main() {
   
   echo "---- Initial environment ----"
   printenv | sort
-  export SITE_NAME=${sflag}
+  # SITE_NAME env var is used downstream by rucio
+  export SITE_NAME=${sarg}
   export VO_ATLAS_SW_DIR='/cvmfs/atlas.cern.ch/repo/sw'
   export ATLAS_LOCAL_ROOT_BASE='/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase'
   echo
@@ -582,7 +588,7 @@ if [ -z "${rarg}" ]; then usage; exit 1; fi
 
 pilotargs="$@"
 
-agisurl="http://pandaserver.cern.ch:25085/cache/schedconfig/${sflag}.all.json"
+agisurl="http://pandaserver.cern.ch:25085/cache/schedconfig/${sarg}.all.json"
 fabricmon="http://fabricmon.cern.ch/api"
 fabricmon="http://apfmon.lancs.ac.uk/api"
 if [ -z ${APFMON} ]; then
