@@ -497,10 +497,6 @@ function main() {
       log "Test setup, not cleaning"
   fi
 
-  if [[ -z ${SINGULARITY_INIT} ]]; then
-    log "==== wrapper stdout END ===="
-    err "==== wrapper stderr END ===="
-  fi
   sortie 0
 }
 
