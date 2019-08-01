@@ -501,7 +501,7 @@ function main() {
     log "==== wrapper stdout END ===="
     err "==== wrapper stderr END ===="
   fi
-  exit 0
+  sortie 0
 }
 
 function usage () {
