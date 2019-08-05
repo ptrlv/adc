@@ -279,7 +279,7 @@ function sortie() {
   if [[ ${mute} == 'true' ]]; then
     muted
   else
-    echo -n "${state} ${duration} ${VERSION} ${sflag} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
+    echo -n "${state} ${duration} ${VERSION} ${rarg} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
   fi
 
   exit $ec
