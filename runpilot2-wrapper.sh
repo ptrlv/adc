@@ -5,7 +5,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20190807a-pilot2
+VERSION=20190807b-pilot2
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -113,9 +113,9 @@ function setup_alrb() {
   export ALRB_userMenuFmtSkip=YES
   export ALRB_noGridMW=NO
   if [[ ${tflag} == 'true' ]]; then
-    check_vomsproxyinfo || check_arcproxy && export ALRB_noGridMW=YES
-  else
     log 'Skipping proxy checks due to -t flag'
+  else
+    check_vomsproxyinfo || check_arcproxy && export ALRB_noGridMW=YES
   fi
 
   if [ -d /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase ]; then
@@ -360,7 +360,11 @@ function main() {
   echo
 
   echo "---- Proxy Information ----"
-  check_proxy
+  if [[ ${tflag} == 'true' ]]; then
+    log 'Skipping proxy checks due to -t flag'
+  else
+    check_proxy
+  fi
   echo
   
   echo "---- Build pilot cmd ----"
@@ -432,6 +436,7 @@ jarg='managed'
 qarg=''
 rarg=''
 sarg=''
+tflag='false'
 piloturl='http://pandaserver.cern.ch:25085/cache/pilot/pilot2.tar.gz'
 mute='false'
 myargs="$@"
