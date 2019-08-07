@@ -5,7 +5,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20190802a-pilot2
+VERSION=20190807a-pilot2
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -112,7 +112,11 @@ function setup_alrb() {
   export ATLAS_LOCAL_ROOT_BASE=${ATLAS_LOCAL_ROOT_BASE:-/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase}
   export ALRB_userMenuFmtSkip=YES
   export ALRB_noGridMW=NO
-  check_vomsproxyinfo || check_arcproxy && export ALRB_noGridMW=YES
+  if [[ ${tflag} == 'true' ]]; then
+    check_vomsproxyinfo || check_arcproxy && export ALRB_noGridMW=YES
+  else
+    log 'Skipping proxy checks due to -t flag'
+  fi
 
   if [ -d /cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase ]; then
     log 'source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh --quiet'
@@ -130,13 +134,8 @@ function setup_local() {
   export SITE_NAME=${sarg}
   log "Looking for ${VO_ATLAS_SW_DIR}/local/setup.sh"
   if [[ -f ${VO_ATLAS_SW_DIR}/local/setup.sh ]]; then
-    log "Sourcing ${VO_ATLAS_SW_DIR}/local/setup.sh -s ${sarg}"
-    source ${VO_ATLAS_SW_DIR}/local/setup.sh -s ${sarg}
-#    if [[ $? -eq 0 ]]; then
-#      log "Error when sourcing ${VO_ATLAS_SW_DIR}/local/setup.sh -s ${sarg}"
-#      err "Error when sourcing ${VO_ATLAS_SW_DIR}/local/setup.sh -s ${sarg}"
-#      sortie 1
-#    fi
+    log "Sourcing ${VO_ATLAS_SW_DIR}/local/setup.sh -s ${rarg}"
+    source ${VO_ATLAS_SW_DIR}/local/setup.sh -s ${rarg}
   else
     log 'WARNING: No ATLAS local setup found'
     err 'WARNING: this site has no local setup ${VO_ATLAS_SW_DIR}/local/setup.sh'
@@ -221,7 +220,7 @@ function muted() {
 
 function apfmon_running() {
   [[ ${mute} == 'true' ]] && muted && return 0
-  echo -n "running 0 ${VERSION} ${sarg} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
+  echo -n "running 0 ${VERSION} ${rarg} ${APFFID}:${APFCID}" > /dev/udp/148.88.67.14/28527
   out=$(curl -ksS --connect-timeout 10 --max-time 20 -d state=wrapperrunning -d wrapper=$VERSION \
              ${APFMON}/jobs/${APFFID}:${APFCID})
   if [[ $? -eq 0 ]]; then
@@ -479,6 +478,11 @@ case $key in
     -s)
     sarg="$2"
     shift
+    shift
+    ;;
+    -t)
+    tflag='true'
+    POSITIONAL+=("$1") # save it in an array for later
     shift
     ;;
     *)
