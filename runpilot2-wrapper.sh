@@ -5,7 +5,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20190807b-pilot2
+VERSION=20190911a-pilot2
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -398,9 +398,12 @@ function main() {
   log "STATUSCODE: $scode"
   apfmon_exiting $scode
   
-  echo "---- find pandaID.out ----"
+  echo "---- find pandaIDs.out ----"
   ls -l ${workdir}/pilot2
+  echo
+  log "pandaIDs.out files:"
   find ${workdir}/pilot2 -name pandaIDs.out -exec ls -l {} \;
+  log "pandaIDs.out content:
   find ${workdir}/pilot2 -name pandaIDs.out -exec cat {} \;
   echo
 
