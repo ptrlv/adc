@@ -403,7 +403,7 @@ function main() {
   echo
   log "pandaIDs.out files:"
   find ${workdir}/pilot2 -name pandaIDs.out -exec ls -l {} \;
-  log "pandaIDs.out content:
+  log "pandaIDs.out content:"
   find ${workdir}/pilot2 -name pandaIDs.out -exec cat {} \;
   echo
 
