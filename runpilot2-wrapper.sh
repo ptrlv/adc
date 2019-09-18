@@ -5,7 +5,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20190911a-pilot2
+VERSION=20190917a-pilot2
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -307,6 +307,8 @@ function main() {
   if [[ -r /proc/version ]]; then
     echo "/proc/version:" $(cat /proc/version)
   fi
+  echo "lsb_release:" $(lsb_release -d 2>/dev/null)
+  
   myargs=$@
   echo "wrapper call: $0 $myargs"
   echo
