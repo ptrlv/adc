@@ -5,7 +5,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20190917a-pilot2
+VERSION=20190918a-pilot2
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -385,6 +385,7 @@ function main() {
   log "==== pilot stdout BEGIN ===="
   $cmd &
   pilotpid=$!
+  log "pilotpid: $pilotpid"
   wait $pilotpid
   pilotrc=$?
   log "==== pilot stdout END ===="
