@@ -147,6 +147,22 @@ function setup_local() {
   fi
 }
 
+function setup_shoal() {
+  log "will set FRONTIER_SERVER with shoal"
+  if [[ -n "${FRONTIER_SERVER}" ]] ; then
+    export FRONTIER_SERVER
+    log "call shoal frontier"
+    outputstr=`shoal-client -f`
+    log "result: $outputstr"
+
+    if [[ $? -eq 0 ]] ; then
+      export FRONTIER_SERVER=$outputstr
+    fi
+
+    log "set FRONTIER_SERVER = $FRONTIER_SERVER"
+  fi
+}
+
 function check_vomsproxyinfo() {
   out=$(voms-proxy-info --version 2>/dev/null)
   if [[ $? -eq 0 ]]; then
@@ -361,6 +377,12 @@ function main() {
   setup_local
   echo
 
+  if [[ "${shoalflag}" == 'true' ]]; then
+    echo "--- Setup shoal ---"
+    setup_shoal
+    echo
+  fi
+
   echo "---- Proxy Information ----"
   if [[ ${tflag} == 'true' ]]; then
     log 'Skipping proxy checks due to -t flag'
@@ -442,6 +464,7 @@ jarg='managed'
 qarg=''
 rarg=''
 sarg=''
+shoalflag=false
 tflag='false'
 piloturl='http://pandaserver.cern.ch:25085/cache/pilot/pilot2.tar.gz'
 mute='false'
@@ -489,6 +512,10 @@ case $key in
     -s)
     sarg="$2"
     shift
+    shift
+    ;;
+    -S|--shoal)
+    shoalflag=true
     shift
     ;;
     -t)

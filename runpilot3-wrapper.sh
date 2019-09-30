@@ -403,6 +403,23 @@ function nordugrid_post_processing() {
 }
 
 
+function setup_shoal() {
+  log "will set FRONTIER_SERVER with shoal"
+  if [[ -n "${FRONTIER_SERVER}" ]] ; then
+    export FRONTIER_SERVER
+    log "call shoal frontier"
+    outputstr=`shoal-client -f`
+    log "result: $outputstr"
+
+    if [[ $? -eq 0 ]] ; then
+      export FRONTIER_SERVER=$outputstr
+    fi
+
+  log "set FRONTIER_SERVER = $FRONTIER_SERVER"
+  fi
+}
+
+
 function sortie() {
   ec=$1
   if [[ $ec -eq 0 ]]; then
@@ -418,6 +435,7 @@ function sortie() {
   err "==== wrapper stderr END ===="
   exit $ec
 }
+
 
 function main() {
   #
@@ -533,6 +551,12 @@ function main() {
   setup_local
   echo
 
+  if [[ "${shoalflag}" == 'true' ]]; then
+    echo "--- Setup shoal ---"
+    setup_shoal
+    echo
+  fi
+
   echo "---- Proxy Information ----"
   check_proxy
   echo
@@ -618,7 +642,8 @@ sflag=''
 uflag=''
 wflag=''
 Fflag=''
-while getopts 'C:f:h:i:p:s:u:w:F:' flag; do
+shoalflag=false
+while getopts 'C:f:h:i:p:s:u:w:F:S' flag; do
   case "${flag}" in
     C) Cflag="${OPTARG}" ;;
     f) fflag="${OPTARG}" ;;
@@ -632,6 +657,7 @@ while getopts 'C:f:h:i:p:s:u:w:F:' flag; do
     A) aflag="${OPTARG}" ;;
     v) vflag="${OPTARG}" ;;
     o) oflag="${OPTARG}" ;;
+    S) shoalflag=true ;;
     *) log "Unexpected option ${flag}" ;;
   esac
 done
