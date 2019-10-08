@@ -5,7 +5,7 @@
 #
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20190930a-pilot2
+VERSION=20191008a-moved
 
 function err() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
@@ -16,6 +16,15 @@ function log() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
   echo $dt $@
 }
+
+msg1="This is not the wrapper you're looking for."
+msg2="Please see https://github.com/PanDAWMS/pilot-wrapper"
+log $msg1
+err $msg1
+log $msg2
+err $msg2
+
+sortie 1
 
 function get_workdir {
   if [[ ${piloturl} == 'local' ]]; then

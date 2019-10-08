@@ -6,7 +6,7 @@
 
 # https://google.github.io/styleguide/shell.xml
 
-VERSION=20190528a
+VERSION=20191008a-deprecated
 
 echo "This is ATLAS pilot wrapper version: $VERSION"
 echo "Please send development requests to p.love@lancaster.ac.uk"
@@ -20,6 +20,16 @@ function log() {
   dt=$(date --utc +"%Y-%m-%d %H:%M:%S %Z [wrapper]")
   echo $dt $@
 }
+
+
+msg1="This is not the wrapper you're looking for."
+msg2="Please see https://github.com/PanDAWMS/pilot-wrapper"
+log $msg1
+err $msg1
+log $msg2
+err $msg2
+
+sortie 1
 
 function get_workdir {
   if [[ "${Fflag}" == "Nordugrid-ATLAS" ]]; then
